@@ -1,24 +1,27 @@
 import React, { useState } from "react";
+import { useAuthStore } from "../store/useAuthStore";
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  const { logout, authUser } = useAuthStore();
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
   return (
-    <nav className="bg-blue-500 flex items-center justify-between px-6 py-3 shadow-md">
+    <nav className="flex items-center justify-between px-3 py-3 bg-blue-500 shadow-md">
       {/* Logo and Search */}
       <div className="flex items-center space-x-4">
         <div className="flex items-center">
-          <img src="../../Images/wlogo.png" alt="Logo" className="h-10 w-12" />
+          <img src="../../Images/wlogo.png" alt="Logo" className="w-12 h-10" />
         </div>
         <div className="relative">
           <input
             type="text"
             placeholder="Search here"
-            className="px-4 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring focus:ring-blue-300"
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
           />
           <button
             type="submit"
@@ -43,7 +46,7 @@ const Navbar = () => {
       </div>
 
       {/* Navigation Links */}
-      <ul className="flex space-x-5 text-white font-medium">
+      <ul className="flex space-x-5 font-medium text-white">
         <li>
           <a href="#" className="hover:underline">
             Home
@@ -77,7 +80,7 @@ const Navbar = () => {
           className="flex items-center space-x-2 cursor-pointer"
           onClick={toggleDropdown}
         >
-          <div className="rounded-full bg-gray-200 p-2">
+          <div className="p-2 bg-gray-200 rounded-full">
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -93,7 +96,7 @@ const Navbar = () => {
               />
             </svg>
           </div>
-          <div className="text-white font-medium">Name</div>
+          <div className="font-medium text-white">Name</div>
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -112,7 +115,7 @@ const Navbar = () => {
 
         {/* Dropdown Menu */}
         {isDropdownOpen && (
-          <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-md shadow-lg">
+          <div className="absolute right-0 w-48 mt-2 bg-white border border-gray-200 rounded-md shadow-lg">
             <a
               href="#"
               className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
@@ -126,7 +129,7 @@ const Navbar = () => {
               Settings
             </a>
             <a
-              href="#"
+              onClick={logout}
               className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
             >
               Logout
