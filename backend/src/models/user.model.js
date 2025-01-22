@@ -20,6 +20,19 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    phone: {
+      type: String,
+      required: true,
+      unique: true,
+    },
+    location: {
+      type: String,
+      default: "",
+    },
+    bio: {
+      type: String,
+      default: "",
+    },
   },
   { timestamps: true }
 );

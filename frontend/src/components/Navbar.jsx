@@ -121,7 +121,7 @@ const Navbar = () => {
             {isDropdownOpen && (
               <div className="absolute right-0 w-48 mt-2 bg-white border border-gray-200 rounded-md shadow-lg">
                 <a
-                  href="#"
+                  href="/profile"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 >
                   Profile
