@@ -10,6 +10,10 @@ const Navbar = () => {
     setIsDropdownOpen(!isDropdownOpen);
   };
 
+  const handleLogin = () => {
+    window.location.href = "/login"; // Redirect to login page
+  };
+
   return (
     <nav className="flex items-center justify-between px-3 py-3 bg-blue-500 shadow-md">
       {/* Logo and Search */}
@@ -46,7 +50,7 @@ const Navbar = () => {
       </div>
 
       {/* Navigation Links */}
-      <ul className="flex space-x-5 font-medium text-white">
+      <ul className="flex items-center ml-auto space-x-5 font-medium text-white">
         <li>
           <a href="#" className="hover:underline">
             Home
@@ -72,71 +76,82 @@ const Navbar = () => {
             About
           </a>
         </li>
-      </ul>
 
-      {/* Profile Section */}
-      <div className="relative">
-        <div
-          className="flex items-center space-x-2 cursor-pointer"
-          onClick={toggleDropdown}
-        >
-          <div className="p-2 bg-gray-200 rounded-full">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-              stroke="currentColor"
-              className="w-6 h-6 text-gray-600"
+        {/* Login or Profile Dropdown */}
+        {authUser ? (
+          <div className="relative">
+            <div
+              className="flex items-center space-x-2 cursor-pointer"
+              onClick={toggleDropdown}
             >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 12c2.28 0 4.142-1.86 4.142-4.142C16.142 5.578 14.28 3.716 12 3.716 9.721 3.716 7.858 5.578 7.858 7.858c0 2.282 1.863 4.142 4.142 4.142zM12 14.94c-3.152 0-5.714 2.544-5.714 5.694h11.428c0-3.15-2.562-5.694-5.714-5.694z"
-              />
-            </svg>
-          </div>
-          <div className="font-medium text-white">Name</div>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="2"
-            stroke="currentColor"
-            className="w-5 h-5 text-white"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 9l6 6 6-6"
-            />
-          </svg>
-        </div>
+              <div className="p-2 bg-gray-200 rounded-full">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  className="w-6 h-6 text-gray-600"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 12c2.28 0 4.142-1.86 4.142-4.142C16.142 5.578 14.28 3.716 12 3.716 9.721 3.716 7.858 5.578 7.858 7.858c0 2.282 1.863 4.142 4.142 4.142zM12 14.94c-3.152 0-5.714 2.544-5.714 5.694h11.428c0-3.15-2.562-5.694-5.714-5.694z"
+                  />
+                </svg>
+              </div>
+              <div className="font-medium text-white">{authUser.name}</div>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="2"
+                stroke="currentColor"
+                className="w-5 h-5 text-white"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 9l6 6 6-6"
+                />
+              </svg>
+            </div>
 
-        {/* Dropdown Menu */}
-        {isDropdownOpen && (
-          <div className="absolute right-0 w-48 mt-2 bg-white border border-gray-200 rounded-md shadow-lg">
-            <a
-              href="#"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-            >
-              Profile
-            </a>
-            <a
-              href="#"
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-            >
-              Settings
-            </a>
-            <a
-              onClick={logout}
-              className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-            >
-              Logout
-            </a>
+            {/* Dropdown Menu */}
+            {isDropdownOpen && (
+              <div className="absolute right-0 w-48 mt-2 bg-white border border-gray-200 rounded-md shadow-lg">
+                <a
+                  href="#"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Profile
+                </a>
+                <a
+                  href="#"
+                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Settings
+                </a>
+                <a
+                  onClick={logout}
+                  className="block px-4 py-2 text-gray-700 cursor-pointer hover:bg-gray-100"
+                >
+                  Logout
+                </a>
+              </div>
+            )}
           </div>
+        ) : (
+          <li>
+            <button
+              className="px-4 py-2 text-blue-500 bg-white rounded-md hover:bg-blue-100"
+              onClick={handleLogin}
+            >
+              Login
+            </button>
+          </li>
         )}
-      </div>
+      </ul>
     </nav>
   );
 };
