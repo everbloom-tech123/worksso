@@ -2,6 +2,7 @@ import cloudinary from "../lib/cloudinary.js";
 import { generateToken } from "../lib/utils.js";
 import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
+import bodyParser from "body-parser";
 
 export const signup = async (req, res) => {
   const { fullName, email, password } = req.body;
@@ -90,23 +91,47 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic } = req.body;
-    const userId = req.user._id;
+    // Destructure the fields from req.body inside the function where req is available
+    const { profilePic, name, location, phone, bio } = req.body;
+    const userId = req.user._id; // Assuming req.user is populated by authentication middleware
 
-    if (!profilePic) {
-      return res.status(400).json({ message: "Profile pic is required" });
+    let updatedFields = {};
+
+    if (profilePic) {
+      try {
+        // Upload the profile picture to Cloudinary (example with max size of 10MB)
+        const uploadResponse = await cloudinary.uploader.upload(profilePic, {
+          max_file_size: 5 * 1024 * 1024, // 10MB limit
+          resource_type: "image", // Ensure it's an image
+        });
+
+        updatedFields.profilePic = uploadResponse.secure_url;
+      } catch (error) {
+        console.log("Error uploading to Cloudinary:", error);
+        return res
+          .status(400)
+          .json({ message: "File upload failed or exceeded size limit." });
+      }
     }
 
-    const uploadResponse = await cloudinary.uploader.upload(profilePic);
-    const updateUser = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: uploadResponse.secure_url },
-      { new: true }
-    );
-    res.status(200).json(updateUser);
+    // Update other fields if provided
+    if (name) updatedFields.name = name;
+    if (location) updatedFields.location = location;
+    if (phone) updatedFields.phone = phone;
+    if (bio) updatedFields.bio = bio;
+
+    if (Object.keys(updatedFields).length === 0) {
+      return res.status(400).json({ message: "No fields to update" });
+    }
+
+    // Find and update the user in the database
+    const updatedUser = await User.findByIdAndUpdate(userId, updatedFields, {
+      new: true,
+    });
+    return res.status(200).json(updatedUser);
   } catch (error) {
-    console.log("error in update profile:", error);
-    res.status(500).json({ message: "Internal server error" });
+    console.log("Error in update profile:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 

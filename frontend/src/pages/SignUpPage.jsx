@@ -182,14 +182,7 @@ const SignUpPage = () => {
                 className="w-full px-4 py-2 text-white transition duration-300 bg-blue-500 rounded-lg hover:bg-blue-600"
                 disabled={isSigningUp}
               >
-                {isSigningUp ? (
-                  <>
-                    <Loader2 className="size-5 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  "Create Account"
-                )}
+                {isSigningUp ? <>Loading...</> : "Create Account"}
               </button>
             </form>
             <p className="mt-4 text-sm text-gray-600">

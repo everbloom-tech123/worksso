@@ -50,9 +50,9 @@ const Navbar = () => {
       </div>
 
       {/* Navigation Links */}
-      <ul className="flex items-center ml-auto space-x-5 font-medium text-white">
+      <ul className="flex items-center ml-5 space-x-5 font-medium text-white">
         <li>
-          <a href="#" className="hover:underline">
+          <a href="/" className="hover:underline">
             Home
           </a>
         </li>
@@ -84,23 +84,12 @@ const Navbar = () => {
               className="flex items-center space-x-2 cursor-pointer"
               onClick={toggleDropdown}
             >
-              <div className="p-2 bg-gray-200 rounded-full">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="2"
-                  stroke="currentColor"
-                  className="w-6 h-6 text-gray-600"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 12c2.28 0 4.142-1.86 4.142-4.142C16.142 5.578 14.28 3.716 12 3.716 9.721 3.716 7.858 5.578 7.858 7.858c0 2.282 1.863 4.142 4.142 4.142zM12 14.94c-3.152 0-5.714 2.544-5.714 5.694h11.428c0-3.15-2.562-5.694-5.714-5.694z"
-                  />
-                </svg>
-              </div>
-              <div className="font-medium text-white">{authUser.name}</div>
+              <img
+                src={authUser.profilePic}
+                alt="Profile"
+                className="object-cover w-10 h-10 border-gray-300 rounded-full"
+              />
+
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
@@ -119,7 +108,7 @@ const Navbar = () => {
 
             {/* Dropdown Menu */}
             {isDropdownOpen && (
-              <div className="absolute right-0 w-48 mt-2 bg-white border border-gray-200 rounded-md shadow-lg">
+              <div className="absolute right-0 z-10 w-48 mt-2 bg-white border border-gray-200 rounded-md shadow-lg">
                 <a
                   href="/profile"
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
