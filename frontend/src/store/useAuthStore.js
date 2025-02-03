@@ -60,14 +60,30 @@ export const useAuthStore = create((set) => ({
 
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
+
     try {
+      // Make the API call to update the profile
       const res = await axiosInstance.put("/auth/update-profile", data);
-      toast.success("Profile updated successfully");
-      set({ authUser: res.data });
+
+      // Check if response is valid and contains the necessary data
+      if (res && res.data) {
+        set({ authUser: res.data }); // Update the authUser with new profile data
+        toast.success("Profile updated successfully");
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (error) {
-      toast.error(error.response.data.message);
+      // Log detailed error for debugging
+      console.error("Error in updateProfile:", error);
+
+      // Safely access error message
+      const errorMessage =
+        error.response?.data?.message ||
+        "An unexpected error occurred while updating the profile.";
+
+      toast.error(errorMessage);
     } finally {
-      set({ isUpdatingProfile: false });
+      set({ isUpdatingProfile: false }); // Ensure loading state is cleared
     }
   },
 }));

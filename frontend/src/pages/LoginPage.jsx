@@ -16,7 +16,7 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 ">
+    <div className="flex items-center justify-center min-h-screen py-8 bg-gray-100 ">
       <div className="flex w-full max-w-screen-xl overflow-hidden bg-white rounded-lg shadow-lg">
         <div className="flex justify-start mt-8 mb-8 ml-8 mr-8 rounded-lg shadow-md">
           {/* left section */}
