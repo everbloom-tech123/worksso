@@ -1,6 +1,5 @@
-import { Section } from "lucide-react";
 import React, { useState, useEffect } from "react";
-import { BsChevronCompactLeft, BsChevronCompactRight } from "react-icons/bs";
+import { BsChevronCompactRight } from "react-icons/bs";
 
 const HomePage = () => {
   const slides = [
@@ -25,27 +24,23 @@ const HomePage = () => {
 
   // Function to go to the previous slide
   const prevSlide = () => {
-    const isFirstSlide = currentIndex === 0;
-    const newIndex = isFirstSlide ? slides.length - 1 : currentIndex - 1;
-    setCurrentIndex(newIndex);
+    setCurrentIndex((prevIndex) =>
+      prevIndex === 0 ? slides.length - 1 : prevIndex - 1
+    );
   };
 
   // Function to go to the next slide
   const nextSlide = () => {
-    const isLastSlide = currentIndex === slides.length - 1;
-    const newIndex = isLastSlide ? 0 : currentIndex + 1;
-    setCurrentIndex(newIndex);
+    setCurrentIndex((prevIndex) =>
+      prevIndex === slides.length - 1 ? 0 : prevIndex + 1
+    );
   };
 
   // Automatically change slides
   useEffect(() => {
-    const interval = setInterval(() => {
-      nextSlide();
-    }, 3000); // Change slide every 3 seconds
-
-    // Clear interval when component unmounts
+    const interval = setInterval(nextSlide, 3000);
     return () => clearInterval(interval);
-  }, [currentIndex]);
+  }, []);
 
   // Function to go to a specific slide
   const goToSlide = (index) => {
@@ -55,15 +50,28 @@ const HomePage = () => {
   const categories = [
     {
       name: "Plumbing",
-      imageUrl:
-        "https://res.cloudinary.com/your-cloud-name/image/upload/plumbing.jpg",
+      imageUrl: "https://cdn-icons-png.flaticon.com/512/3063/3063481.png",
     },
     {
       name: "Cleaning",
-      imageUrl:
-        "https://res.cloudinary.com/your-cloud-name/image/upload/cleaning.jpg",
+      imageUrl: "https://cdn-icons-png.flaticon.com/512/2200/2200210.png",
     },
-    // Add more categories here
+    {
+      name: "Electrical",
+      imageUrl: "https://cdn-icons-png.flaticon.com/512/3159/3159370.png",
+    },
+    {
+      name: "Carpentry",
+      imageUrl: "https://cdn-icons-png.flaticon.com/512/919/919655.png",
+    },
+    {
+      name: "Moving",
+      imageUrl: "https://cdn-icons-png.flaticon.com/512/679/679922.png",
+    },
+    {
+      name: "Painting",
+      imageUrl: "https://cdn-icons-png.flaticon.com/512/5767/5767413.png",
+    },
   ];
 
   return (
@@ -91,8 +99,7 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* {Categories} */}
-
+      {/* Categories */}
       <section className="px-16 mb-10">
         <div className="flex items-center justify-between px-10 mb-4">
           <h1 className="text-2xl font-semibold">Categories</h1>
@@ -101,20 +108,31 @@ const HomePage = () => {
             <BsChevronCompactRight />
           </button>
         </div>
-        <div className="grid grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
           {categories.map((category) => (
-            <div key={category} className="p-4 text-center border rounded-lg">
-              <div className="h-16 mb-2 bg-gray-200">
+            <div
+              key={category.name}
+              className="p-4 text-center border rounded-lg shadow-lg"
+            >
+              <div className="flex items-center justify-center h-16 mb-2">
                 <img
                   src={category.imageUrl}
                   alt={category.name}
-                  className="object-cover w-full h-16 mb-2 rounded-lg"
+                  className="object-contain w-16 h-16"
                 />
               </div>
-              <p>{category}</p>
+              <p className="font-medium">{category.name}</p>
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Create own Services */}
+      <section className="p-6 text-center bg-blue-100 ">
+        <h2 className="mb-4 text-4xl font-bold"> Post your Service free.</h2>
+        <button className="px-6 py-3 text-white bg-blue-500 rounded-md">
+          Click Here
+        </button>
       </section>
     </div>
   );
