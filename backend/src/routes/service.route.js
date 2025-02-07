@@ -8,12 +8,21 @@ import {
   updateService,
   deleteService,
 } from "../controllers/service.controllers.js";
-import { get } from "mongoose";
+import { protectRoute } from "../middleware/auth.middleware.js";
 
-router.post("/createService", createService);
-router.get("/all", getAllServices);
+// Create a new service
+router.post("/createService", protectRoute, createService); // Use '/services' instead of '/createService'
+
+// Get all services
+router.get("/", getAllServices); // Use '/services' for retrieving all
+
+// Get a single service by its ID
 router.get("/:id", getServiceById);
-router.put("/:id", updateService);
-router.delete("/:id", deleteService);
+
+// Update a service by ID
+router.put("/:id", protectRoute, updateService); // Protect the route for updates
+
+// Delete a service by ID
+router.delete("/:id", protectRoute, deleteService); // Protect the route for deletions
 
 export default router;
