@@ -18,22 +18,27 @@ const serviceSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    subCategory: {
+    location: {
       type: String,
       required: true,
     },
     images: {
-      type: Array,
-      required: true,
-      default: "",
+      type: [String],
+
+      default: [],
     },
-    serviceType: {
+    number: {
+      type: String,
+      required: true,
+    },
+    email: {
       type: String,
       required: true,
     },
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: true,
     },
   },
   { timestamps: true }

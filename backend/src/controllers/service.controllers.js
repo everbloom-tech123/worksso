@@ -1,6 +1,7 @@
-import Service from "../models/service.model.js";
-import cloudinary from "../lib/cloudinary.js";
+import Service from "../models/service.model.js"; // Your service model
+import cloudinary from "../lib/cloudinary.js"; // Cloudinary configuration
 
+// Create a new service
 export const createService = async (req, res) => {
   try {
     const {
@@ -8,65 +9,92 @@ export const createService = async (req, res) => {
       price,
       description,
       category,
-      subCategory,
-      serviceType,
+      location,
       images,
+      number,
+      email,
     } = req.body;
+    const userId = req.user._id; // Get the userId from the authentication middleware
+
+    // Check if category exists
+    if (!category) {
+      return res.status(400).json({ message: "Category is required." });
+    }
 
     let uploadedImages = [];
 
-    // Check if images exist and upload to Cloudinary
+    // If images are provided, upload them to Cloudinary
     if (images && images.length > 0) {
       uploadedImages = await Promise.all(
         images.map(async (image) => {
-          const result = await cloudinary.uploader.upload(image, {
+          const uploadResponse = await cloudinary.uploader.upload(image, {
             folder: "services", // Cloudinary folder name
+            resource_type: "image", // Ensure the file is an image
           });
-          return result.secure_url; // Store Cloudinary image URL
+          return uploadResponse.secure_url; // Save the Cloudinary image URL
         })
       );
     }
 
+    // Create a new service object with provided data and uploaded image URLs
     const newService = new Service({
       title,
       price,
       description,
       category,
-      subCategory,
-      serviceType,
-      images: uploadedImages, // Save Cloudinary URLs
-      userId: req.userId,
+      location,
+      images: uploadedImages, // Save the Cloudinary URLs
+      number,
+      email,
+      userId, // Save the userId of the person adding the service
     });
 
+    // Save the new service to the database
     await newService.save();
 
+    // Return the created service
     res.status(201).json(newService);
   } catch (error) {
     console.error("Error in createService controller:", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
-export const getAllServices = async (res) => {
+// Get all services with pagination
+export const getAllServices = async (req, res) => {
   try {
-    const services = await Service.find();
-    res.status(200).json(services);
+    const { page = 1, limit = 10 } = req.query; // Default pagination
+    const services = await Service.find()
+      .skip((page - 1) * limit)
+      .limit(Number(limit)); // Apply pagination
+    res.status(200).json(services); // Return the list of services
   } catch (error) {
     console.error("Error in getAllServices controller:", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
+// Get a service by its ID
 export const getServiceById = async (req, res) => {
   try {
-    const service = await Service.findById(req.params.id);
-    res.status(200).json(service);
+    const service = await Service.findById(req.params.id); // Find a service by ID
+    if (!service) {
+      return res.status(404).json({ message: "Service not found" }); // If service not found
+    }
+    res.status(200).json(service); // Return the found service
   } catch (error) {
     console.error("Error in getServiceById controller:", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
+// Update a service by its ID
 export const updateService = async (req, res) => {
   try {
     const {
@@ -74,56 +102,100 @@ export const updateService = async (req, res) => {
       price,
       description,
       category,
-      subCategory,
-      serviceType,
+      location,
       images,
+      number,
+      email,
     } = req.body;
+    const serviceId = req.params.id; // Get the service ID from the route parameters
 
-    let uploadedImages = [];
+    // Check if category exists
+    if (!category) {
+      return res.status(400).json({ message: "Category is required." });
+    }
 
-    // Check if images exist and upload to Cloudinary
+    let updatedImages = [];
+
+    // If images are provided, upload them to Cloudinary
     if (images && images.length > 0) {
-      uploadedImages = await Promise.all(
+      updatedImages = await Promise.all(
         images.map(async (image) => {
-          const result = await cloudinary.uploader.upload(image, {
+          const uploadResponse = await cloudinary.uploader.upload(image, {
             folder: "services", // Cloudinary folder name
+            resource_type: "image", // Ensure the file is an image
           });
-          return result.secure_url; // Store Cloudinary image URL
+          return uploadResponse.secure_url; // Save the Cloudinary image URL
         })
       );
     }
 
+    // Fetch the existing service to retain images if no new ones are uploaded
+    const existingService = await Service.findById(serviceId);
+    if (!existingService) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    // Prepare the updated fields for the service
     const updatedService = {
       title,
       price,
       description,
       category,
-      subCategory,
-      serviceType,
-      images: uploadedImages, // Save Cloudinary URLs
+      location,
+      images: updatedImages.length > 0 ? updatedImages : existingService.images, // Keep existing images if no new ones provided
+      number,
+      email,
     };
 
-    const service = await Service.findByIdAndUpdate(
-      req.params.id,
+    // Update the service in the database
+    const updatedServiceData = await Service.findByIdAndUpdate(
+      serviceId,
       updatedService,
-      {
-        new: true,
-      }
+      { new: true }
     );
 
-    res.status(200).json(service);
+    if (!updatedServiceData) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    // Return the updated service
+    res.status(200).json(updatedServiceData);
   } catch (error) {
     console.error("Error in updateService controller:", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };
 
+// Delete a service by its ID
 export const deleteService = async (req, res) => {
   try {
-    await Service.findByIdAndDelete(req.params.id);
+    const serviceId = req.params.id; // Get the service ID from the route parameters
+
+    // Find and delete the service by its ID
+    const service = await Service.findByIdAndDelete(serviceId);
+
+    if (!service) {
+      return res.status(404).json({ message: "Service not found" });
+    }
+
+    // Delete images from Cloudinary
+    if (service.images && service.images.length > 0) {
+      await Promise.all(
+        service.images.map(async (imageUrl) => {
+          const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract public_id
+          await cloudinary.uploader.destroy(`services/${publicId}`);
+        })
+      );
+    }
+
+    // Return success message
     res.status(200).json({ message: "Service deleted successfully" });
   } catch (error) {
     console.error("Error in deleteService controller:", error.message);
-    res.status(500).json({ message: "Internal server error" });
+    res
+      .status(500)
+      .json({ message: "Internal server error", error: error.message });
   }
 };

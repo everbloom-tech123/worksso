@@ -1,17 +1,18 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Camera, Mail, User, MapPin, Phone, Info } from "lucide-react";
+import ServiceForm from "./ServiceForm"; // Import the ServiceForm component
 
 const ProfilePage = () => {
   const { authUser, logout, isUpdatingProfile, updateProfile } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
+  const [isServiceFormOpen, setIsServiceFormOpen] = useState(false); // State for modal
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
-
     reader.readAsDataURL(file);
 
     reader.onload = async () => {
@@ -21,12 +22,8 @@ const ProfilePage = () => {
     };
   };
 
-  const handleaccountsetting = () => {
-    window.location.href = "/accountSetting";
-  };
-
   return (
-    <div className="flex items-start justify-center py-10 bg-gray-100">
+    <div className="flex flex-col items-center justify-center py-10 bg-gray-100">
       <div className="grid w-full max-w-4xl grid-cols-1 gap-8 p-6 bg-white rounded-md shadow-lg md:grid-cols-2">
         {/* Profile Details Section */}
         <div className="p-6 space-y-8 bg-base-300 rounded-xl">
@@ -73,7 +70,6 @@ const ProfilePage = () => {
 
           {/* Profile Info */}
           <div className="space-y-6">
-            {/* Full Name */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-sm text-zinc-400">
                 <User className="w-4 h-4" />
@@ -84,7 +80,6 @@ const ProfilePage = () => {
               </p>
             </div>
 
-            {/* Email */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-sm text-zinc-400">
                 <Mail className="w-4 h-4" />
@@ -95,7 +90,6 @@ const ProfilePage = () => {
               </p>
             </div>
 
-            {/* Location */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-sm text-zinc-400">
                 <MapPin className="w-4 h-4" />
@@ -106,7 +100,6 @@ const ProfilePage = () => {
               </p>
             </div>
 
-            {/* Phone Number */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-sm text-zinc-400">
                 <Phone className="w-4 h-4" />
@@ -117,7 +110,6 @@ const ProfilePage = () => {
               </p>
             </div>
 
-            {/* Bio */}
             <div className="space-y-1.5">
               <div className="flex items-center gap-2 text-sm text-zinc-400">
                 <Info className="w-4 h-4" />
@@ -135,7 +127,7 @@ const ProfilePage = () => {
           <h2 className="text-xl font-semibold">Settings</h2>
           <button
             className="w-full px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-            onClick={handleaccountsetting}
+            onClick={() => (window.location.href = "/accountSetting")}
           >
             Account Setting
           </button>
@@ -147,6 +139,24 @@ const ProfilePage = () => {
           </button>
         </div>
       </div>
+
+      {/* Service Button */}
+      <div className="grid items-center justify-center w-full max-w-4xl gap-6 p-6 py-8 mt-8 bg-white rounded-md shadow-lg md:grid-cols-2">
+        <h1 className="text-3xl font-semibold text-center text-gray-800 md:text-left">
+          Create Your Own Service
+        </h1>
+        <button
+          onClick={() => setIsServiceFormOpen(true)}
+          className="w-auto h-16 mx-auto font-semibold text-white transition duration-300 ease-in-out bg-blue-400 rounded-lg md:w-auto hover:bg-blue-500 md:mx-0"
+        >
+          Click Here
+        </button>
+      </div>
+
+      {/* Service Form Modal */}
+      {isServiceFormOpen && (
+        <ServiceForm onClose={() => setIsServiceFormOpen(false)} />
+      )}
     </div>
   );
 };
