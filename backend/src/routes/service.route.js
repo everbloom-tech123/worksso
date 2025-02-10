@@ -4,7 +4,7 @@ const router = express.Router();
 import {
   createService,
   getAllServices,
-  getServiceById,
+  getServiceByUserId,
   updateService,
   deleteService,
 } from "../controllers/service.controllers.js";
@@ -14,10 +14,10 @@ import { protectRoute } from "../middleware/auth.middleware.js";
 router.post("/createService", protectRoute, createService); // Use '/services' instead of '/createService'
 
 // Get all services
-router.get("/", getAllServices); // Use '/services' for retrieving all
+router.get("/service", getAllServices); // Use '/services' for retrieving all
 
 // Get a single service by its ID
-router.get("/:id", getServiceById);
+router.get("/user", protectRoute, getServiceByUserId);
 
 // Update a service by ID
 router.put("/:id", protectRoute, updateService); // Protect the route for updates

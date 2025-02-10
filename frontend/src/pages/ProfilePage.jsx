@@ -1,12 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../store/useAuthStore";
-import { Camera, Mail, User, MapPin, Phone, Info } from "lucide-react";
-import ServiceForm from "./ServiceForm"; // Import the ServiceForm component
+import { serviceStore } from "../store/serviceStore";
+import { Camera, Mail, User, MapPin, Phone, Info, Star } from "lucide-react"; // Added Star import
+import ServiceForm from "./ServiceForm";
 
 const ProfilePage = () => {
   const { authUser, logout, isUpdatingProfile, updateProfile } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
-  const [isServiceFormOpen, setIsServiceFormOpen] = useState(false); // State for modal
+  const [isServiceFormOpen, setIsServiceFormOpen] = useState(false);
+  const { services, fetchServices } = serviceStore();
+
+  useEffect(() => {
+    fetchServices();
+  }, [fetchServices]);
 
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
@@ -157,6 +163,62 @@ const ProfilePage = () => {
       {isServiceFormOpen && (
         <ServiceForm onClose={() => setIsServiceFormOpen(false)} />
       )}
+
+      {/* Service List Section */}
+      <div className="w-full max-w-4xl p-6 mt-8 bg-white rounded-lg shadow-md">
+        <h1 className="text-3xl font-semibold text-center text-gray-800 md:text-left">
+          Your Services
+        </h1>
+        <div className="mt-6 space-y-6">
+          {services?.map((service) => (
+            <div
+              key={service._id}
+              className="relative flex items-center p-4 px-6 bg-gray-100 rounded-lg shadow-sm"
+            >
+              {/* Service Image */}
+              <img
+                src={service.images[0] || "https://via.placeholder.com/150"}
+                alt={service.title}
+                className="object-cover w-40 h-40 mr-4 rounded-lg"
+              />
+
+              {/* Service Details */}
+              <div className="flex-1">
+                <h2 className="text-lg font-bold">{authUser.fullName}</h2>
+
+                {/* Rating */}
+                <div className="flex items-center my-1 text-yellow-500">
+                  {Array(5)
+                    .fill()
+                    .map((_, i) => (
+                      <Star key={i} size={16} />
+                    ))}
+                  <span className="ml-2 text-gray-500">(07)</span>
+                </div>
+                <h2 className="text-lg font-bold">{service.title}</h2>
+                <p className="text-sm text-gray-600 line-clamp-2">
+                  {service.description}
+                </p>
+
+                {/* Price */}
+                <div className="absolute font-semibold text-gray-600 top-2 right-4">
+                  Price: <span className="text-black">${service.price}</span>
+                </div>
+
+                {/* Phone Number */}
+                <div className="flex items-center mt-2 font-semibold text-red-500">
+                  <Phone size={16} className="mr-2" /> {service.number}
+                </div>
+              </div>
+
+              {/* More Details Button */}
+              <button className="absolute px-4 py-2 text-white bg-blue-500 rounded-lg bottom-4 right-4 hover:bg-blue-600">
+                More details
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

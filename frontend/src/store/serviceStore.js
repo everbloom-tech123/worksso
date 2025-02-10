@@ -9,13 +9,35 @@ export const serviceStore = create((set) => ({
   isUpdatingService: false,
   isDeletingService: false,
 
-  fetchServices: async () => {
+  fetchAllServices: async () => {
     set({ isFetchingServices: true });
     try {
       const res = await axiosInstance.get("/service");
       set({ services: res.data });
     } catch (error) {
       console.log("Error in fetchServices:", error);
+    } finally {
+      set({ isFetchingServices: false });
+    }
+  },
+
+  fetchServices: async () => {
+    set({ isFetchingServices: true });
+    try {
+      const res = await axiosInstance.get("/service/user"); // No need to pass userId
+      console.log("Fetched services:", res.data); // Log the response to check the data
+      set({ services: res.data });
+    } catch (error) {
+      // Enhanced error handling
+      if (error.response) {
+        console.error("Error response data:", error.response.data);
+        console.error("Error response status:", error.response.status);
+      } else if (error.request) {
+        console.error("Error request:", error.request);
+      } else {
+        console.error("Error message:", error.message);
+      }
+      toast.error("Failed to fetch services");
     } finally {
       set({ isFetchingServices: false });
     }

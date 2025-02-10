@@ -78,16 +78,24 @@ export const getAllServices = async (req, res) => {
   }
 };
 
-// Get a service by its ID
-export const getServiceById = async (req, res) => {
+// Controller to get services for authenticated user
+export const getServiceByUserId = async (req, res) => {
   try {
-    const service = await Service.findById(req.params.id); // Find a service by ID
-    if (!service) {
-      return res.status(404).json({ message: "Service not found" }); // If service not found
+    const userId = req.user._id; // Get the userId from the authenticated user
+
+    // Find services that belong to the authenticated user
+    const services = await Service.find({ userId });
+
+    if (!services) {
+      return res
+        .status(404)
+        .json({ message: "No services found for this user" });
     }
-    res.status(200).json(service); // Return the found service
+
+    // Return the services to the frontend
+    res.status(200).json(services);
   } catch (error) {
-    console.error("Error in getServiceById controller:", error.message);
+    console.error("Error in getServiceByUserId controller:", error.message);
     res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
