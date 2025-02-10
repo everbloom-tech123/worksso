@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
+import { useNavigate } from "react-router-dom";
 
 const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-
+  const navigate = useNavigate();
   const { logout, authUser } = useAuthStore();
 
   const toggleDropdown = () => {
@@ -13,13 +14,21 @@ const Navbar = () => {
   const handleLogin = () => {
     window.location.href = "/login"; // Redirect to login page
   };
+  const handleImageClick = () => {
+    navigate("/"); // Navigate to home page
+  };
 
   return (
     <nav className="flex items-center justify-between px-3 py-3 bg-blue-500 shadow-md">
       {/* Logo and Search */}
       <div className="flex items-center space-x-4">
         <div className="flex items-center">
-          <img src="../../Images/wlogo.png" alt="Logo" className="w-12 h-10" />
+          <img
+            onClick={handleImageClick}
+            src="../../Images/wlogo.png"
+            alt="Logo"
+            className="w-12 h-10"
+          />
         </div>
         <div className="relative">
           <input

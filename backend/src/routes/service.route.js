@@ -11,18 +11,17 @@ import {
 import { protectRoute } from "../middleware/auth.middleware.js";
 
 // Create a new service
-router.post("/createService", protectRoute, createService); // Use '/services' instead of '/createService'
+router.post("/createService", protectRoute, createService);
 
 // Get all services
-router.get("/service", getAllServices); // Use '/services' for retrieving all
+router.get("/services", getAllServices);
 
 // Get a single service by its ID
 router.get("/user", protectRoute, getServiceByUserId);
 
 // Update a service by ID
-router.put("/:id", protectRoute, updateService); // Protect the route for updates
-
+router.put("/:id", protectRoute, updateService);
 // Delete a service by ID
-router.delete("/:id", protectRoute, deleteService); // Protect the route for deletions
+router.delete("/:id", protectRoute, deleteService);
 
 export default router;

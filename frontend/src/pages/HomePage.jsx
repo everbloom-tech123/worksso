@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { BsChevronCompactRight } from "react-icons/bs";
+import { serviceStore } from "../store/serviceStore";
+import { Star, Phone } from "lucide-react";
+import { BsStarFill } from "react-icons/bs"; // Bootstrap Star Icon
+import { useNavigate } from "react-router-dom";
 
 const HomePage = () => {
+  const { services, fetchAllServices } = serviceStore();
+  const navigate = useNavigate();
+
   const slides = [
     {
       url: "https://blog.bayiq.com/hubfs/Automotive%20Technician%20Tool%20Box.jpeg",
@@ -74,6 +81,20 @@ const HomePage = () => {
     },
   ];
 
+  useEffect(() => {
+    fetchAllServices(1, 10).then(() => {
+      console.log("Services fetched:", services); // Debugging
+    });
+  }, []);
+
+  const loadMore = () => {
+    fetchAllServices(currentPage + 1, 10); // Fetch next page
+  };
+
+  const handleNavigateToProfile = () => {
+    navigate("/profile"); // Navigates to Account Setting page
+  };
+
   return (
     <div className="items-center justify-center w-full overflow-hidden">
       <div className="pt-[64px] max-w-[1740px] h-[600px] w-full m-auto py-16 px-4 relative mb-8 border-spacing-5">
@@ -127,10 +148,78 @@ const HomePage = () => {
         </div>
       </section>
 
+      <div className="w-full p-6 mt-8 bg-white rounded-lg shadow-md">
+        <h1 className="text-3xl font-semibold text-center text-gray-800 md:text-left">
+          Services
+        </h1>
+        <div className="grid grid-cols-1 gap-6 mt-6 md:grid-cols-2">
+          {services?.length > 0 ? (
+            services.map((service) => (
+              <div
+                key={service._id}
+                className="flex p-6 transition-all bg-gray-100 border border-transparent rounded-lg shadow-sm hover:border-blue-500"
+              >
+                {/* Service Image */}
+                <img
+                  src={service.images?.[0] || "https://via.placeholder.com/150"}
+                  alt={service.title}
+                  className="object-cover w-32 h-32 mr-6 rounded-lg"
+                />
+
+                {/* Service Details */}
+                <div className="flex-1">
+                  <h2 className="text-lg font-bold">
+                    {service.userId?.fullName || "Unknown User"}
+                  </h2>
+
+                  {/* Rating */}
+                  <div className="flex items-center my-2 text-yellow-500">
+                    {Array(service.rating || 5)
+                      .fill()
+                      .map((_, i) => (
+                        <BsStarFill key={i} size={16} />
+                      ))}
+                    <span className="ml-2 text-gray-500">
+                      ({service.reviews || 0})
+                    </span>
+                  </div>
+
+                  <h2 className="text-lg font-bold">{service.title}</h2>
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {service.description}
+                  </p>
+
+                  {/* Price */}
+                  <div className="mt-4 font-semibold text-gray-600">
+                    Price: <span className="text-black">${service.price}</span>
+                  </div>
+
+                  {/* Phone Number */}
+                  <div className="flex items-center mt-2 font-semibold text-red-500">
+                    <Phone size={16} className="mr-2" />{" "}
+                    {service.number || "N/A"}
+                  </div>
+                </div>
+
+                {/* More Details Button */}
+                <button className="self-end px-4 py-2 ml-auto text-white bg-blue-500 rounded-lg hover:bg-blue-600">
+                  More details
+                </button>
+              </div>
+            ))
+          ) : (
+            <p className="text-center text-gray-500">No services available.</p>
+          )}
+        </div>
+      </div>
+
       {/* Create own Services */}
       <section className="p-6 text-center bg-blue-100 ">
         <h2 className="mb-4 text-4xl font-bold"> Post your Service free.</h2>
-        <button className="px-6 py-3 text-white bg-blue-500 rounded-md">
+        <button
+          className="px-6 py-3 text-white bg-blue-500 rounded-md"
+          onClick={handleNavigateToProfile}
+        >
           Click Here
         </button>
       </section>

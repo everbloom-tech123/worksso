@@ -62,14 +62,21 @@ export const createService = async (req, res) => {
   }
 };
 
-// Get all services with pagination
 export const getAllServices = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query; // Default pagination
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const services = await Service.find()
-      .skip((page - 1) * limit)
-      .limit(Number(limit)); // Apply pagination
-    res.status(200).json(services); // Return the list of services
+      .populate("userId", "fullName") // Populate the provider name (assuming 'fullName' is the provider name)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    const totalServices = await Service.countDocuments();
+
+    res.status(200).json({ services, total: totalServices });
   } catch (error) {
     console.error("Error in getAllServices controller:", error.message);
     res

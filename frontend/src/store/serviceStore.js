@@ -9,13 +9,16 @@ export const serviceStore = create((set) => ({
   isUpdatingService: false,
   isDeletingService: false,
 
-  fetchAllServices: async () => {
+  fetchAllServices: async (page = 1, limit = 10) => {
     set({ isFetchingServices: true });
     try {
-      const res = await axiosInstance.get("/service");
-      set({ services: res.data });
+      const res = await axiosInstance.get(
+        `/service/services?page=${page}&limit=${limit}`
+      );
+      console.log("Fetched Services:", res.data.services); // Debugging
+      set({ services: res.data.services || [] }); // Ensure array is set
     } catch (error) {
-      console.log("Error in fetchServices:", error);
+      console.log("Error in fetchAllServices:", error);
     } finally {
       set({ isFetchingServices: false });
     }
