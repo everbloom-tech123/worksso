@@ -94,7 +94,7 @@ const Navbar = () => {
               onClick={toggleDropdown}
             >
               <img
-                src={authUser.profilePic}
+                src={authUser.profilePic || "../../Images/avatar.png"}
                 alt="Profile"
                 className="object-cover w-10 h-10 border-gray-300 rounded-full"
               />

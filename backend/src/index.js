@@ -9,11 +9,10 @@ import serviceRoutes from "./routes/service.route.js";
 
 dotenv.config();
 const app = express();
-const PORT = process.env.PORT;
+const PORT = process.env.PORT || 5003;
 
 app.use(bodyParser.json({ limit: "5mb" }));
 app.use(bodyParser.urlencoded({ limit: "5mb", extended: true }));
-
 app.use(express.json());
 app.use(cookieParser());
 app.use(
@@ -27,6 +26,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/service", serviceRoutes);
 
 app.listen(PORT, () => {
-  console.log("sever is running on PORT:" + PORT);
+  console.log(`Server is running on PORT: ${PORT}`);
   connectDB();
 });
