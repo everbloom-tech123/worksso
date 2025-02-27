@@ -7,7 +7,6 @@ export const useAuthStore = create((set) => ({
   isSigningUp: false,
   isLoggingIn: false,
   isUpdatingProfile: false,
-
   isCheckingAuth: true,
 
   checkAuth: async () => {
@@ -15,7 +14,10 @@ export const useAuthStore = create((set) => ({
       const res = await axiosInstance.get("/auth/check");
       set({ authUser: res.data });
     } catch (error) {
-      console.log("Error in checkAuth:", error);
+      console.log(
+        "Error in checkAuth:",
+        error.response ? error.response.data : error
+      );
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
@@ -29,7 +31,7 @@ export const useAuthStore = create((set) => ({
       toast.success("Account created successfully");
       set({ authUser: res.data });
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Something went wrong");
     } finally {
       set({ isSigningUp: false });
     }
@@ -41,7 +43,7 @@ export const useAuthStore = create((set) => ({
       set({ authUser: null });
       toast.success("Logged out successfully");
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Something went wrong");
     }
   },
 
@@ -52,7 +54,7 @@ export const useAuthStore = create((set) => ({
       toast.success("Logged in successfully");
       set({ authUser: res.data });
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error.response?.data?.message || "Invalid Credentials");
     } finally {
       set({ isLoggingIn: false });
     }
@@ -60,30 +62,21 @@ export const useAuthStore = create((set) => ({
 
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
-
     try {
-      // Make the API call to update the profile
       const res = await axiosInstance.put("/auth/update-profile", data);
-
-      // Check if response is valid and contains the necessary data
       if (res && res.data) {
-        set({ authUser: res.data }); // Update the authUser with new profile data
+        set({ authUser: res.data });
         toast.success("Profile updated successfully");
       } else {
         throw new Error("Invalid response from server");
       }
     } catch (error) {
-      // Log detailed error for debugging
       console.error("Error in updateProfile:", error);
-
-      // Safely access error message
       const errorMessage =
-        error.response?.data?.message ||
-        "An unexpected error occurred while updating the profile.";
-
+        error.response?.data?.message || "Unexpected error occurred";
       toast.error(errorMessage);
     } finally {
-      set({ isUpdatingProfile: false }); // Ensure loading state is cleared
+      set({ isUpdatingProfile: false });
     }
   },
 }));
