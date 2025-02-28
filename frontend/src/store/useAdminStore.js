@@ -17,4 +17,15 @@ export const useAdminStore = create((set) => ({
       set({ error: error.message, isLoading: false });
     }
   },
+
+  // Action to delete a user
+  deleteUser: async (id) => {
+    set({ isLoading: true, error: null });
+    try {
+      await axiosInstance.delete(`/admin/user/${id}`);
+      set({ isLoading: false });
+    } catch (error) {
+      set({ error: error.message, isLoading: false });
+    }
+  },
 }));
