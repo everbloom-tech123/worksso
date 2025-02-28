@@ -1,16 +1,16 @@
 import express from "express";
-import { protectRoute, protectRole } from "../middleware/auth.middleware.js";
+import { protectRoute, adminOnly } from "../middleware/auth.middleware.js";
+
+import {
+  adminDashboard,
+  getAllUsers,
+  deleteUser,
+} from "../controllers/admin.controllers.js";
 
 const router = express.Router();
 
-// Admin-only route
-router.get(
-  "/admin/dashboard",
-  protectRoute,
-  protectRole(["admin"]),
-  (req, res) => {
-    res.json({ message: "Welcome to the admin dashboard!" });
-  }
-);
+router.get("/dashboard", protectRoute, adminOnly, adminDashboard);
+router.get("/users", protectRoute, adminOnly, getAllUsers);
+router.delete("/user/:id", protectRoute, adminOnly, deleteUser);
 
 export default router;
