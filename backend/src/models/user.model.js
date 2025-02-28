@@ -22,7 +22,6 @@ const userSchema = new mongoose.Schema(
     },
     phone: {
       type: String,
-
       default: "",
     },
     location: {
@@ -32,6 +31,11 @@ const userSchema = new mongoose.Schema(
     bio: {
       type: String,
       default: "",
+    },
+    role: {
+      type: String,
+      enum: ["user", "admin"], // Add roles here
+      default: "user", // Default role is 'user'
     },
   },
   { timestamps: true }
