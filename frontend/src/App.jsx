@@ -11,12 +11,13 @@ import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import Footer from "./components/Footer.jsx";
 import AccountSetting from "./pages/AccountSetting.jsx";
+import AdminDashboard from "./pages/AdminDashboard .jsx"; // New route for admin dashboard
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
 
   useEffect(() => {
-    checkAuth();
+    checkAuth(); // Check the user's auth status on page load
   }, [checkAuth]);
 
   if (isCheckingAuth && !authUser)
@@ -30,6 +31,7 @@ const App = () => {
     <div>
       <Navbar />
       <Routes>
+        {/* Public routes */}
         <Route
           path="/"
           element={authUser ? <HomePage /> : <Navigate to="/login" />}
@@ -42,6 +44,8 @@ const App = () => {
           path="/login"
           element={!authUser ? <LoginPage /> : <Navigate to="/" />}
         />
+
+        {/* Protected routes */}
         <Route
           path="/settings"
           element={authUser ? <SettingsPage /> : <Navigate to="/login" />}
@@ -53,6 +57,18 @@ const App = () => {
         <Route
           path="/accountSetting"
           element={authUser ? <AccountSetting /> : <Navigate to="/login" />}
+        />
+
+        {/* Admin-only route */}
+        <Route
+          path="/admin/dashboard"
+          element={
+            authUser?.role === "admin" ? (
+              <AdminDashboard />
+            ) : (
+              <Navigate to="/" />
+            )
+          }
         />
       </Routes>
       <Footer />

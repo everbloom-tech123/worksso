@@ -130,6 +130,17 @@ const Navbar = () => {
                 >
                   Settings
                 </a>
+
+                {/* Admin Dashboard Link (Only if user is admin) */}
+                {authUser.role === "admin" && (
+                  <a
+                    href="/admin/dashboard"
+                    className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                  >
+                    Admin Dashboard
+                  </a>
+                )}
+
                 <a
                   onClick={logout}
                   className="block px-4 py-2 text-gray-700 cursor-pointer hover:bg-gray-100"

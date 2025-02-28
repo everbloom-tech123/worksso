@@ -4,7 +4,7 @@ import User from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 
 export const signup = async (req, res) => {
-  const { fullName, email, password } = req.body;
+  const { fullName, email, password, role } = req.body; // Add role here
 
   try {
     if (!fullName || !email || !password) {
@@ -30,6 +30,7 @@ export const signup = async (req, res) => {
       fullName,
       email,
       password: hashedPassword,
+      role: role || "user",
     });
 
     await newUser.save();
@@ -40,6 +41,7 @@ export const signup = async (req, res) => {
       fullName: newUser.fullName,
       email: newUser.email,
       profilePic: newUser.profilePic,
+      role: newUser.role,
     });
   } catch (error) {
     console.log("Error in signup controller", error.message);
@@ -63,13 +65,14 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials." });
     }
 
-    generateToken(user._id, res);
+    generateToken(user._id, res, user.role);
 
     res.status(200).json({
       _id: user._id,
       fullName: user.fullName,
       email: user.email,
       profilePic: user.profilePic,
+      role: user.role,
     });
   } catch (error) {
     console.log("Error in login controller", error.message);
