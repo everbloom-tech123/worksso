@@ -118,6 +118,16 @@ const AdminDashboard = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Add Category Button */}
+        <div className="mt-5">
+          <button
+            onClick={() => navigate("/admin/category")} // Navigate to category page
+            className="px-4 py-2 text-white bg-green-500 rounded-md hover:bg-green-400"
+          >
+            Add Category
+          </button>
+        </div>
       </div>
     </div>
   );
