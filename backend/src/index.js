@@ -7,6 +7,7 @@ import bodyParser from "body-parser";
 import authRoutes from "./routes/auth.route.js";
 import serviceRoutes from "./routes/service.route.js";
 import adminRoutes from "./routes/admin.route.js";
+import categoryRoutes from "./routes/category.route.js";
 
 dotenv.config();
 const app = express();
@@ -26,6 +27,7 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/service", serviceRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/category", categoryRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on PORT: ${PORT}`);

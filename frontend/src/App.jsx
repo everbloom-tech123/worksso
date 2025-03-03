@@ -11,7 +11,8 @@ import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import Footer from "./components/Footer.jsx";
 import AccountSetting from "./pages/AccountSetting.jsx";
-import AdminDashboard from "./pages/AdminDashboard .jsx"; // New route for admin dashboard
+import AdminDashboard from "./pages/AdminDashboard .jsx";
+import CategoryPage from "./pages/CategoryPage.jsx";
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
@@ -68,6 +69,12 @@ const App = () => {
             ) : (
               <Navigate to="/" />
             )
+          }
+        />
+        <Route
+          path="/admin/category"
+          element={
+            authUser?.role === "admin" ? <CategoryPage /> : <Navigate to="/" />
           }
         />
       </Routes>
