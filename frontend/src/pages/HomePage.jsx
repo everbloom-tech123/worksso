@@ -4,6 +4,7 @@ import { serviceStore } from "../store/serviceStore";
 import { Star, Phone } from "lucide-react";
 import { BsStarFill } from "react-icons/bs"; // Bootstrap Star Icon
 import { useNavigate } from "react-router-dom";
+import { categoryStore } from "../store/categoryStore";
 
 const HomePage = () => {
   const { services, fetchAllServices } = serviceStore();
@@ -28,6 +29,26 @@ const HomePage = () => {
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      categoryStore.getState().fetchCategories(),
+      fetchAllServices(1, 10),
+    ])
+      .then(([categoryResponse, servicesResponse]) => {
+        setCategories(categoryResponse);
+        console.log("Services fetched:", servicesResponse);
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
 
   // Function to go to the previous slide
   const prevSlide = () => {
@@ -54,33 +75,6 @@ const HomePage = () => {
     setCurrentIndex(index);
   };
 
-  const categories = [
-    {
-      name: "Plumbing",
-      imageUrl: "https://cdn-icons-png.flaticon.com/512/3063/3063481.png",
-    },
-    {
-      name: "Cleaning",
-      imageUrl: "https://cdn-icons-png.flaticon.com/512/2200/2200210.png",
-    },
-    {
-      name: "Electrical",
-      imageUrl: "https://cdn-icons-png.flaticon.com/512/3159/3159370.png",
-    },
-    {
-      name: "Carpentry",
-      imageUrl: "https://cdn-icons-png.flaticon.com/512/919/919655.png",
-    },
-    {
-      name: "Moving",
-      imageUrl: "https://cdn-icons-png.flaticon.com/512/679/679922.png",
-    },
-    {
-      name: "Painting",
-      imageUrl: "https://cdn-icons-png.flaticon.com/512/5767/5767413.png",
-    },
-  ];
-
   useEffect(() => {
     fetchAllServices(1, 10).then(() => {
       console.log("Services fetched:", services); // Debugging
@@ -96,14 +90,14 @@ const HomePage = () => {
   };
 
   return (
-    <div className="items-center justify-center w-full overflow-hidden">
-      <div className="pt-[64px] max-w-[1740px] h-[600px] w-full m-auto py-16 px-4 relative mb-8 border-spacing-5">
+    <div className="bg-gray-50">
+      <div className="relative h-[600px] bg-cover bg-center transition-all duration-500 -mb-24">
         {/* Slide */}
         <div
           style={{
             backgroundImage: `url(${slides[currentIndex].url})`,
           }}
-          className="w-full h-[500px] duration-500 bg-center bg-cover rounded-2xl"
+          className="w-full h-[500px] duration-500 bg-center bg-cover "
         ></div>
 
         {/* Dots */}
@@ -120,109 +114,117 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Categories */}
-      <section className="px-16 mb-10">
-        <div className="flex items-center justify-between px-10 mb-4">
-          <h1 className="text-2xl font-semibold">Categories</h1>
-          <button className="flex items-center space-x-1 text-blue-500">
-            <span>View all</span>
-            <BsChevronCompactRight />
-          </button>
-        </div>
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-          {categories.map((category) => (
-            <div
-              key={category.name}
-              className="p-4 text-center border rounded-lg shadow-lg"
-            >
-              <div className="flex items-center justify-center h-16 mb-2">
-                <img
-                  src={category.imageUrl}
-                  alt={category.name}
-                  className="object-contain w-16 h-16"
-                />
-              </div>
-              <p className="font-medium">{category.name}</p>
+      {/* Categories Section */}
+      <div className="container px-4 py-16 mx-auto">
+        <h2 className="text-3xl font-semibold text-center text-gray-800">
+          Browse by Categories
+        </h2>
+        <div className="grid grid-cols-2 gap-8 mt-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          {loading ? (
+            <div className="text-xl text-center col-span-full">
+              Loading categories...
             </div>
-          ))}
-        </div>
-      </section>
-
-      <div className="w-full p-6 mt-8 bg-white rounded-lg shadow-md">
-        <h1 className="text-3xl font-semibold text-center text-gray-800 md:text-left">
-          Services
-        </h1>
-        <div className="grid grid-cols-1 gap-6 mt-6 md:grid-cols-2">
-          {services?.length > 0 ? (
-            services.map((service) => (
+          ) : categories.length === 0 ? (
+            <div className="text-xl text-center col-span-full">
+              No categories available.
+            </div>
+          ) : (
+            categories.map((category) => (
               <div
-                key={service._id}
-                className="flex p-6 transition-all bg-gray-100 border border-transparent rounded-lg shadow-sm hover:border-blue-500"
+                key={category._id}
+                className="p-6 transition duration-300 transform bg-white rounded-lg shadow-lg hover:scale-105"
               >
-                {/* Service Image */}
                 <img
-                  src={service.images?.[0] || "https://via.placeholder.com/150"}
-                  alt={service.title}
-                  className="object-cover w-32 h-32 mr-6 rounded-lg"
+                  src={category.logo}
+                  alt={category.name}
+                  className="w-20 h-20 mx-auto mb-4"
                 />
-
-                {/* Service Details */}
-                <div className="flex-1">
-                  <h2 className="text-lg font-bold">
-                    {service.userId?.fullName || "Unknown User"}
-                  </h2>
-
-                  {/* Rating */}
-                  <div className="flex items-center my-2 text-yellow-500">
-                    {Array(service.rating || 5)
-                      .fill()
-                      .map((_, i) => (
-                        <BsStarFill key={i} size={16} />
-                      ))}
-                    <span className="ml-2 text-gray-500">
-                      ({service.reviews || 0})
-                    </span>
-                  </div>
-
-                  <h2 className="text-lg font-bold">{service.title}</h2>
-                  <p className="text-sm text-gray-600 line-clamp-2">
-                    {service.description}
-                  </p>
-
-                  {/* Price */}
-                  <div className="mt-4 font-semibold text-gray-600">
-                    Price: <span className="text-black">${service.price}</span>
-                  </div>
-
-                  {/* Phone Number */}
-                  <div className="flex items-center mt-2 font-semibold text-red-500">
-                    <Phone size={16} className="mr-2" />{" "}
-                    {service.number || "N/A"}
-                  </div>
-                </div>
-
-                {/* More Details Button */}
-                <button className="self-end px-4 py-2 ml-auto text-white bg-blue-500 rounded-lg hover:bg-blue-600">
-                  More details
-                </button>
+                <h3 className="text-xl font-semibold text-center">
+                  {category.name}
+                </h3>
               </div>
             ))
-          ) : (
-            <p className="text-center text-gray-500">No services available.</p>
           )}
         </div>
       </div>
 
-      {/* Create own Services */}
-      <section className="p-6 text-center bg-blue-100 ">
-        <h2 className="mb-4 text-4xl font-bold"> Post your Service free.</h2>
-        <button
-          className="px-6 py-3 text-white bg-blue-500 rounded-md"
-          onClick={handleNavigateToProfile}
-        >
-          Click Here
-        </button>
-      </section>
+      {/* Services Section */}
+      <div className="py-16 bg-white">
+        <div className="container px-4 mx-auto">
+          <h2 className="text-3xl font-semibold text-center text-gray-800">
+            Popular Services
+          </h2>
+          <div className="grid grid-cols-1 gap-8 mt-8 sm:grid-cols-2 lg:grid-cols-3">
+            {services?.length > 0 ? (
+              services.map((service) => (
+                <div
+                  key={service._id}
+                  className="overflow-hidden transition-all duration-300 transform bg-gray-100 rounded-lg shadow-md hover:scale-105"
+                >
+                  <img
+                    src={
+                      service.images?.[0] || "https://via.placeholder.com/150"
+                    }
+                    alt={service.title}
+                    className="object-cover w-full h-64"
+                  />
+                  <div className="p-6">
+                    <div className="flex items-center mb-3">
+                      <div className="flex text-yellow-500">
+                        {Array(service.rating || 5)
+                          .fill()
+                          .map((_, i) => (
+                            <BsStarFill key={i} size={18} />
+                          ))}
+                      </div>
+                      <span className="ml-2 text-sm text-gray-500">
+                        ({service.reviews || 0} reviews)
+                      </span>
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      {service.title}
+                    </h3>
+                    <p className="mt-2 text-sm text-gray-600">
+                      {service.description}
+                    </p>
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="text-xl font-bold text-gray-900">
+                        ${service.price}
+                      </div>
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Phone size={16} className="mr-2" />{" "}
+                        {service.number || "N/A"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-xl text-center col-span-full">
+                No services available.
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Call to Action Section */}
+      <div className="py-12 text-white bg-blue-500">
+        <div className="container px-4 mx-auto text-center">
+          <h2 className="mb-4 text-3xl font-bold">
+            Post Your Service for Free
+          </h2>
+          <p className="mb-6 text-xl">
+            Get more customers by posting your service on our platform
+          </p>
+          <button
+            className="px-8 py-4 text-xl font-semibold text-blue-500 transition-all bg-white rounded-full hover:bg-gray-100"
+            onClick={handleNavigateToProfile}
+          >
+            Post Your Service
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
