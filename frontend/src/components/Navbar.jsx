@@ -66,15 +66,11 @@ const Navbar = () => {
           </a>
         </li>
         <li>
-          <a href="#" className="hover:underline">
+          <a href="/servicePage" className="hover:underline">
             Services
           </a>
         </li>
-        <li>
-          <a href="#" className="hover:underline">
-            Jobs
-          </a>
-        </li>
+
         <li>
           <a href="#" className="hover:underline">
             Contact us
@@ -123,12 +119,6 @@ const Navbar = () => {
                   className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
                 >
                   Profile
-                </a>
-                <a
-                  href="#"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Settings
                 </a>
 
                 {/* Admin Dashboard Link (Only if user is admin) */}

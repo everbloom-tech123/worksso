@@ -1,19 +1,32 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { serviceStore } from "../store/serviceStore";
+import { categoryStore } from "../store/categoryStore"; // Import categoryStore
 
 const ServiceForm = ({ onClose }) => {
   const [images, setImages] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState([]); // Added state to store categories
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     price: "",
-    category: "",
+    category: "", // Store selected category
     location: "",
     number: "",
     email: "",
-    images: [], // Added images to formData
+    images: [],
   });
+
+  // Fetch categories when the component is mounted
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const fetchedCategories = await categoryStore
+        .getState()
+        .fetchCategories();
+      setCategories(fetchedCategories);
+    };
+    fetchCategories();
+  }, []);
 
   const handleImageUpload = (e) => {
     const files = Array.from(e.target.files);
@@ -106,19 +119,25 @@ const ServiceForm = ({ onClose }) => {
             />
           </div>
 
+          {/* Category Dropdown */}
           <div className="mb-4">
             <label className="block text-sm font-medium">Category</label>
-            <input
-              type="text"
+            <select
               name="category"
               value={formData.category}
               onChange={(e) =>
                 setFormData({ ...formData, category: e.target.value })
               }
-              placeholder="Enter service category"
               className="w-full px-3 py-2 border rounded-md"
               required
-            />
+            >
+              <option value="">Select a Category</option>
+              {categories.map((category) => (
+                <option key={category._id} value={category._id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="mb-4">

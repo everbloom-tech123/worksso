@@ -5,6 +5,7 @@ import { Star, Phone } from "lucide-react";
 import { BsStarFill } from "react-icons/bs"; // Bootstrap Star Icon
 import { useNavigate } from "react-router-dom";
 import { categoryStore } from "../store/categoryStore";
+import { Link } from "react-router-dom";
 
 const HomePage = () => {
   const { services, fetchAllServices } = serviceStore();
@@ -140,7 +141,9 @@ const HomePage = () => {
                   className="w-20 h-20 mx-auto mb-4"
                 />
                 <h3 className="text-xl font-semibold text-center">
-                  {category.name}
+                  <Link to={`/services?category=${category._id}`}>
+                    {category.name}
+                  </Link>
                 </h3>
               </div>
             ))
