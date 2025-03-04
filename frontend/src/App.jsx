@@ -4,7 +4,6 @@ import Navbar from "./components/Navbar";
 import HomePage from "./pages/HomePage";
 import SignUpPage from "./pages/SignUpPage";
 import LoginPage from "./pages/LoginPage";
-import SettingsPage from "./pages/SettingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import { useAuthStore } from "./store/useAuthStore";
 import { Loader } from "lucide-react";
@@ -13,6 +12,7 @@ import Footer from "./components/Footer.jsx";
 import AccountSetting from "./pages/AccountSetting.jsx";
 import AdminDashboard from "./pages/AdminDashboard .jsx";
 import CategoryPage from "./pages/CategoryPage.jsx";
+import ServicePage from "./pages/servicePage.jsx";
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
@@ -48,10 +48,6 @@ const App = () => {
 
         {/* Protected routes */}
         <Route
-          path="/settings"
-          element={authUser ? <SettingsPage /> : <Navigate to="/login" />}
-        />
-        <Route
           path="/profile"
           element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
         />
@@ -77,6 +73,13 @@ const App = () => {
             authUser?.role === "admin" ? <CategoryPage /> : <Navigate to="/" />
           }
         />
+
+        {/* Service Page */}
+        <Route
+          path="/servicePage"
+          element={authUser ? <ServicePage /> : <Navigate to="/" />}
+        />
+        <Route path="/services/:categoryId" component={ServicePage} />
       </Routes>
       <Footer />
       <Toaster />
