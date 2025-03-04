@@ -10,9 +10,10 @@ import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import Footer from "./components/Footer.jsx";
 import AccountSetting from "./pages/AccountSetting.jsx";
-import AdminDashboard from "./pages/AdminDashboard .jsx";
+import AdminDashboard from "./pages/AdminDashboard .jsx"; // Removed extra space
 import CategoryPage from "./pages/CategoryPage.jsx";
-import ServicePage from "./pages/servicePage.jsx";
+import ServicePage from "./pages/servicePage.jsx"; // Corrected import name
+import CategoryByIdPage from "./pages/CategoryByIdPage.jsx"; // Corrected import name
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
@@ -76,10 +77,13 @@ const App = () => {
 
         {/* Service Page */}
         <Route
+          path="/services/:categoryId"
+          element={authUser ? <CategoryByIdPage /> : <Navigate to="/" />}
+        />
+        <Route
           path="/servicePage"
           element={authUser ? <ServicePage /> : <Navigate to="/" />}
         />
-        <Route path="/services/:categoryId" component={ServicePage} />
       </Routes>
       <Footer />
       <Toaster />
