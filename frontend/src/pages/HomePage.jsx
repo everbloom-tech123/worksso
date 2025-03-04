@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { BsChevronCompactRight } from "react-icons/bs";
-import { serviceStore } from "../store/serviceStore";
+import { BsChevronCompactRight, BsStarFill } from "react-icons/bs";
 import { Star, Phone } from "lucide-react";
-import { BsStarFill } from "react-icons/bs"; // Bootstrap Star Icon
 import { useNavigate } from "react-router-dom";
+import { serviceStore } from "../store/serviceStore";
 import { categoryStore } from "../store/categoryStore";
-import { Link } from "react-router-dom";
 
 const HomePage = () => {
   const { services, fetchAllServices } = serviceStore();
@@ -32,6 +30,7 @@ const HomePage = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setLoading(true);
@@ -39,9 +38,8 @@ const HomePage = () => {
       categoryStore.getState().fetchCategories(),
       fetchAllServices(1, 10),
     ])
-      .then(([categoryResponse, servicesResponse]) => {
+      .then(([categoryResponse]) => {
         setCategories(categoryResponse);
-        console.log("Services fetched:", servicesResponse);
       })
       .catch((error) => {
         console.error("Error fetching data:", error);
@@ -51,57 +49,42 @@ const HomePage = () => {
       });
   }, []);
 
-  // Function to go to the previous slide
-  const prevSlide = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex === 0 ? slides.length - 1 : prevIndex - 1
-    );
-  };
-
-  // Function to go to the next slide
-  const nextSlide = () => {
-    setCurrentIndex((prevIndex) =>
-      prevIndex === slides.length - 1 ? 0 : prevIndex + 1
-    );
-  };
-
-  // Automatically change slides
   useEffect(() => {
-    const interval = setInterval(nextSlide, 3000);
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) =>
+        prevIndex === slides.length - 1 ? 0 : prevIndex + 1
+      );
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  // Function to go to a specific slide
   const goToSlide = (index) => {
     setCurrentIndex(index);
   };
 
-  useEffect(() => {
-    fetchAllServices(1, 10).then(() => {
-      console.log("Services fetched:", services); // Debugging
-    });
-  }, []);
-
   const loadMore = () => {
-    fetchAllServices(currentPage + 1, 10); // Fetch next page
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    fetchAllServices(nextPage, 10);
   };
 
   const handleNavigateToProfile = () => {
-    navigate("/profile"); // Navigates to Account Setting page
+    navigate("/profile");
+  };
+
+  // Handle category click to navigate to category-specific service page
+  const handleCategoryClick = (categoryId) => {
+    navigate(`/services/${categoryId}`); // Navigate to ServicePage with categoryId
   };
 
   return (
     <div className="bg-gray-50">
       <div className="relative h-[600px] bg-cover bg-center transition-all duration-500 -mb-24">
-        {/* Slide */}
         <div
-          style={{
-            backgroundImage: `url(${slides[currentIndex].url})`,
-          }}
-          className="w-full h-[500px] duration-500 bg-center bg-cover "
+          style={{ backgroundImage: `url(${slides[currentIndex].url})` }}
+          className="w-full h-[500px] duration-500 bg-center bg-cover"
         ></div>
 
-        {/* Dots */}
         <div className="flex justify-center mt-4">
           {slides.map((_, index) => (
             <div
@@ -115,7 +98,6 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Categories Section */}
       <div className="container px-4 py-16 mx-auto">
         <h2 className="text-3xl font-semibold text-center text-gray-800">
           Browse by Categories
@@ -134,6 +116,7 @@ const HomePage = () => {
               <div
                 key={category._id}
                 className="p-6 transition duration-300 transform bg-white rounded-lg shadow-lg hover:scale-105"
+                onClick={() => handleCategoryClick(category._id)} // Add click handler
               >
                 <img
                   src={category.logo}
@@ -141,9 +124,7 @@ const HomePage = () => {
                   className="w-20 h-20 mx-auto mb-4"
                 />
                 <h3 className="text-xl font-semibold text-center">
-                  <Link to={`/services?category=${category._id}`}>
-                    {category.name}
-                  </Link>
+                  {category.name}
                 </h3>
               </div>
             ))
@@ -151,7 +132,6 @@ const HomePage = () => {
         </div>
       </div>
 
-      {/* Services Section */}
       <div className="py-16 bg-white">
         <div className="container px-4 mx-auto">
           <h2 className="text-3xl font-semibold text-center text-gray-800">
