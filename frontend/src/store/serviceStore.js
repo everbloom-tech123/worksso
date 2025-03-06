@@ -10,6 +10,20 @@ export const serviceStore = create((set) => ({
   isDeletingService: false,
   error: null,
 
+  fetchServices: async () => {
+    set({ isFetchingServices: true, error: null });
+    try {
+      const res = await axiosInstance.get("/service/services");
+      set({ services: res.data.services || [] });
+    } catch (error) {
+      console.error("Error in fetchServices:", error);
+      set({ error: "Failed to fetch services" });
+      toast.error("Failed to fetch services");
+    } finally {
+      set({ isFetchingServices: false });
+    }
+  },
+
   // Fetch all services with pagination
   fetchAllServices: async (page = 1, limit = 10) => {
     set({ isFetchingServices: true, error: null });
