@@ -3,12 +3,16 @@ import { useAuthStore } from "../store/useAuthStore";
 import { serviceStore } from "../store/serviceStore";
 import { Camera, Mail, User, MapPin, Phone, Info, Star } from "lucide-react"; // Added Star import
 import ServiceForm from "./ServiceForm";
+import UpdateServiceModal from "./UpdateServiceModalPage";
 
 const ProfilePage = () => {
   const { authUser, logout, isUpdatingProfile, updateProfile } = useAuthStore();
   const [selectedImg, setSelectedImg] = useState(null);
   const [isServiceFormOpen, setIsServiceFormOpen] = useState(false);
-  const { services, fetchServices } = serviceStore();
+  const [serviceToUpdate, setServiceToUpdate] = useState(null);
+  const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
+  const { services, fetchServices, deleteService, updateService } =
+    serviceStore();
 
   useEffect(() => {
     fetchServices();
@@ -26,6 +30,28 @@ const ProfilePage = () => {
       setSelectedImg(base64Image);
       await updateProfile({ profilePic: base64Image });
     };
+  };
+
+  const handleDeleteService = (serviceId) => {
+    deleteService(serviceId);
+  };
+
+  const openUpdateModal = (service) => {
+    setServiceToUpdate(service); // Set the service to be updated
+    setIsUpdateModalOpen(true); // Open the update modal
+  };
+
+  const closeUpdateModal = () => {
+    setIsUpdateModalOpen(false); // Close the update modal
+  };
+
+  const handleServiceUpdate = async (updatedServiceData) => {
+    try {
+      await updateService(serviceToUpdate._id, updatedServiceData);
+      closeUpdateModal(); // Close modal after successful update
+    } catch (error) {
+      console.error("Error updating service:", error);
+    }
   };
 
   return (
@@ -211,13 +237,29 @@ const ProfilePage = () => {
                 </div>
               </div>
 
-              {/* More Details Button */}
-              <button className="absolute px-4 py-2 text-white bg-blue-500 rounded-lg bottom-4 right-4 hover:bg-blue-600">
-                More details
+              {/* Update and Delete Buttons */}
+              <button
+                onClick={() => openUpdateModal(service)}
+                className="absolute px-4 py-2 mr-20 text-white bg-green-500 rounded-lg bottom-4 right-4 hover:bg-green-600"
+              >
+                Update
+              </button>
+              <button
+                onClick={() => handleDeleteService(service._id)}
+                className="absolute px-4 py-2 text-white bg-red-500 rounded-lg bottom-4 right-4 hover:bg-red-600"
+              >
+                Delete
               </button>
             </div>
           ))}
         </div>
+        {isUpdateModalOpen && serviceToUpdate && (
+          <UpdateServiceModal
+            service={serviceToUpdate}
+            onClose={closeUpdateModal}
+            onUpdate={handleServiceUpdate}
+          />
+        )}
       </div>
     </div>
   );
