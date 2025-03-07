@@ -58,7 +58,7 @@ const ServicePage = () => {
     <div className="container px-4 py-8 mx-auto">
       <div className="flex gap-4">
         {/* Filter Section */}
-        <div className="w-[200px] p-4 border-r bg-gray-50 flex-shrink-0">
+        <div className="flex-shrink-0 p-4 -ml-40 border-r bg-gray-50">
           <h3 className="mb-3 text-lg font-semibold text-gray-700">
             Filter by Category
           </h3>
@@ -81,10 +81,10 @@ const ServicePage = () => {
 
         {/* Services Section */}
         <div className="flex-1 p-4">
-          <h2 className="text-3xl font-semibold text-center text-gray-800">
+          <h2 className="text-3xl font-semibold text-gray-800">
             Popular Services
           </h2>
-          <div className="flex justify-center">
+          <div className="flex flex-col mt-4">
             <div className="grid grid-cols-1 gap-6 mt-6 sm:grid-cols-2 lg:grid-cols-3">
               {loading ? (
                 <div className="text-xl text-center col-span-full">
