@@ -112,11 +112,9 @@ export const getServiceByUserId = async (req, res) => {
 // Update a service (only description, location, images, number, and email)
 export const updateService = async (req, res) => {
   try {
-    const { description, location, images, number, email } = req.body;
+    const { title, price, description, location, images, number, email } =
+      req.body;
     const serviceId = req.params.id; // Get the service ID from the route parameters
-
-    console.log("Received update request for:", serviceId);
-    console.log("Request Body:", req.body);
 
     // Find the existing service
     const existingService = await Service.findById(serviceId);
@@ -124,44 +122,71 @@ export const updateService = async (req, res) => {
       return res.status(404).json({ message: "Service not found" });
     }
 
-    let updatedImages = existingService.images; // Keep old images if none are uploaded
+    let updatedImages = existingService.images; // Keep old images if no new ones are provided
 
     // If new images are provided, upload them to Cloudinary
-    if (images && images.length > 0) {
-      updatedImages = await Promise.all(
-        images.map(async (image) => {
-          const uploadResponse = await cloudinary.uploader.upload(image, {
-            folder: "services",
-            resource_type: "image",
-          });
-          return uploadResponse.secure_url;
-        })
-      );
+    if (Array.isArray(images)) {
+      if (images.length > 0) {
+        // Delete existing images from Cloudinary
+        await Promise.all(
+          existingService.images.map(async (imageUrl) => {
+            try {
+              const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract Cloudinary public_id
+              await cloudinary.uploader.destroy(`services/${publicId}`);
+            } catch (err) {
+              console.error("Error deleting image from Cloudinary:", err);
+            }
+          })
+        );
+
+        // Upload new images
+        updatedImages = await Promise.all(
+          images.map(async (image) => {
+            try {
+              const uploadResponse = await cloudinary.uploader.upload(image, {
+                folder: "services",
+                resource_type: "image",
+              });
+              return uploadResponse.secure_url;
+            } catch (err) {
+              console.error("Error uploading image to Cloudinary:", err);
+              return null; // Handle errors without breaking the update process
+            }
+          })
+        );
+
+        // Remove any null values from failed uploads
+        updatedImages = updatedImages.filter((url) => url !== null);
+      } else {
+        // If images array is empty, remove all images
+        updatedImages = [];
+      }
     }
 
-    // Prepare updated fields (only update non-empty values)
+    // Prepare updated fields
     const updatedFields = {};
+    if (title !== undefined) updatedFields.title = title;
+    if (price !== undefined) updatedFields.price = price;
     if (description !== undefined) updatedFields.description = description;
     if (location !== undefined) updatedFields.location = location;
     if (updatedImages !== undefined) updatedFields.images = updatedImages;
     if (number !== undefined) updatedFields.number = number;
     if (email !== undefined) updatedFields.email = email;
 
-    console.log("Updated Fields:", updatedFields); // Debugging
-
     // Update the service in the database
     const updatedService = await Service.findByIdAndUpdate(
       serviceId,
-      { $set: updatedFields }, // Only update fields that are provided
-      { new: true, runValidators: true } // Return the updated document
+      { $set: updatedFields },
+      { new: true, runValidators: true }
     );
 
     res.status(200).json(updatedService);
   } catch (error) {
     console.error("Error in updateService controller:", error.message);
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 

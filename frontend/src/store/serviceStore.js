@@ -91,7 +91,7 @@ export const serviceStore = create((set) => ({
       const res = await axiosInstance.put(`/service/${id}`, data);
       set((state) => ({
         services: state.services.map((service) =>
-          service.id === id ? res.data : service
+          service._id === id ? { ...service, ...data } : service
         ),
       }));
       toast.success("Service updated successfully");

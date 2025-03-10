@@ -55,10 +55,10 @@ const ServicePage = () => {
       : services;
 
   return (
-    <div className="container px-4 py-8 mx-auto">
+    <div className="py-8 mx-auto ">
       <div className="flex gap-4">
         {/* Filter Section */}
-        <div className="flex-shrink-0 p-4 -ml-40 border-r bg-gray-50">
+        <div className="flex-shrink-0 p-4 border-r bg-gray-50">
           <h3 className="mb-3 text-lg font-semibold text-gray-700">
             Filter by Category
           </h3>
