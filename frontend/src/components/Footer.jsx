@@ -2,7 +2,7 @@ import React from "react";
 
 const Footer = () => {
   return (
-    <footer className="items-center px-5 py-10 bg-white border-t ">
+    <footer className="items-center pt-10 bg-white border-t">
       <div className="grid grid-cols-1 gap-8 mx-auto max-w-7xl md:grid-cols-3">
         {/* Logo and Description */}
         <div>
@@ -95,6 +95,9 @@ const Footer = () => {
         <a href="#" className="text-gray-600 hover:text-blue-500">
           <i className="fab fa-instagram"></i>
         </a>
+      </div>
+      <div className="py-1 text-center text-white bg-blue-400">
+        <p>&copy; 2025 Your Company. All rights reserved.</p>
       </div>
     </footer>
   );

@@ -8,6 +8,7 @@ import authRoutes from "./routes/auth.route.js";
 import serviceRoutes from "./routes/service.route.js";
 import adminRoutes from "./routes/admin.route.js";
 import categoryRoutes from "./routes/category.route.js";
+import contactRoutes from "./routes/contact.route.js";
 
 dotenv.config();
 const app = express();
@@ -28,6 +29,11 @@ app.use("/api/auth", authRoutes);
 app.use("/api/service", serviceRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/category", categoryRoutes);
+app.use("/api/contact", contactRoutes);
+
+app.use((req, res, next) => {
+  res.status(404).json({ message: "Route not found" });
+});
 
 app.listen(PORT, () => {
   console.log(`Server is running on PORT: ${PORT}`);
