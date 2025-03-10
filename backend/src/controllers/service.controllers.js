@@ -109,77 +109,84 @@ export const getServiceByUserId = async (req, res) => {
   }
 };
 
-// Update a service by its ID
+// Update a service (only description, location, images, number, and email)
 export const updateService = async (req, res) => {
   try {
-    const {
-      title,
-      price,
-      description,
-      category,
-      location,
-      images,
-      number,
-      email,
-    } = req.body;
+    const { title, price, description, location, images, number, email } =
+      req.body;
     const serviceId = req.params.id; // Get the service ID from the route parameters
 
-    // Check if category exists
-    if (!category) {
-      return res.status(400).json({ message: "Category is required." });
-    }
-
-    let updatedImages = [];
-
-    // If images are provided, upload them to Cloudinary
-    if (images && images.length > 0) {
-      updatedImages = await Promise.all(
-        images.map(async (image) => {
-          const uploadResponse = await cloudinary.uploader.upload(image, {
-            folder: "services", // Cloudinary folder name
-            resource_type: "image", // Ensure the file is an image
-          });
-          return uploadResponse.secure_url; // Save the Cloudinary image URL
-        })
-      );
-    }
-
-    // Fetch the existing service to retain images if no new ones are uploaded
+    // Find the existing service
     const existingService = await Service.findById(serviceId);
     if (!existingService) {
       return res.status(404).json({ message: "Service not found" });
     }
 
-    // Prepare the updated fields for the service
-    const updatedService = {
-      title,
-      price,
-      description,
-      category,
-      location,
-      images: updatedImages.length > 0 ? updatedImages : existingService.images, // Keep existing images if no new ones provided
-      number,
-      email,
-    };
+    let updatedImages = existingService.images; // Keep old images if no new ones are provided
 
-    // Update the service in the database
-    const updatedServiceData = await Service.findByIdAndUpdate(
-      serviceId,
-      updatedService,
-      { new: true }
-    );
+    // If new images are provided, upload them to Cloudinary
+    if (Array.isArray(images)) {
+      if (images.length > 0) {
+        // Delete existing images from Cloudinary
+        await Promise.all(
+          existingService.images.map(async (imageUrl) => {
+            try {
+              const publicId = imageUrl.split("/").pop().split(".")[0]; // Extract Cloudinary public_id
+              await cloudinary.uploader.destroy(`services/${publicId}`);
+            } catch (err) {
+              console.error("Error deleting image from Cloudinary:", err);
+            }
+          })
+        );
 
-    if (!updatedServiceData) {
-      return res.status(404).json({ message: "Service not found" });
+        // Upload new images
+        updatedImages = await Promise.all(
+          images.map(async (image) => {
+            try {
+              const uploadResponse = await cloudinary.uploader.upload(image, {
+                folder: "services",
+                resource_type: "image",
+              });
+              return uploadResponse.secure_url;
+            } catch (err) {
+              console.error("Error uploading image to Cloudinary:", err);
+              return null; // Handle errors without breaking the update process
+            }
+          })
+        );
+
+        // Remove any null values from failed uploads
+        updatedImages = updatedImages.filter((url) => url !== null);
+      } else {
+        // If images array is empty, remove all images
+        updatedImages = [];
+      }
     }
 
-    // Return the updated service
-    res.status(200).json(updatedServiceData);
+    // Prepare updated fields
+    const updatedFields = {};
+    if (title !== undefined) updatedFields.title = title;
+    if (price !== undefined) updatedFields.price = price;
+    if (description !== undefined) updatedFields.description = description;
+    if (location !== undefined) updatedFields.location = location;
+    if (updatedImages !== undefined) updatedFields.images = updatedImages;
+    if (number !== undefined) updatedFields.number = number;
+    if (email !== undefined) updatedFields.email = email;
+
+    // Update the service in the database
+    const updatedService = await Service.findByIdAndUpdate(
+      serviceId,
+      { $set: updatedFields },
+      { new: true, runValidators: true }
+    );
+
+    res.status(200).json(updatedService);
   } catch (error) {
     console.error("Error in updateService controller:", error.message);
-    res
-      .status(500)
-      .json({ message: "Internal server error", error: error.message });
+    res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
 };
 
@@ -188,14 +195,14 @@ export const deleteService = async (req, res) => {
   try {
     const serviceId = req.params.id; // Get the service ID from the route parameters
 
-    // Find and delete the service by its ID
+    // Find and delete the service by ID
     const service = await Service.findByIdAndDelete(serviceId);
 
     if (!service) {
       return res.status(404).json({ message: "Service not found" });
     }
 
-    // Delete images from Cloudinary
+    // Delete images from Cloudinary if they exist
     if (service.images && service.images.length > 0) {
       await Promise.all(
         service.images.map(async (imageUrl) => {
@@ -205,7 +212,6 @@ export const deleteService = async (req, res) => {
       );
     }
 
-    // Return success message
     res.status(200).json({ message: "Service deleted successfully" });
   } catch (error) {
     console.error("Error in deleteService controller:", error.message);

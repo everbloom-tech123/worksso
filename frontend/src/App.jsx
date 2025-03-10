@@ -14,6 +14,7 @@ import AdminDashboard from "./pages/AdminDashboard .jsx"; // Removed extra space
 import CategoryPage from "./pages/CategoryPage.jsx";
 import ServicePage from "./pages/servicePage.jsx"; // Corrected import name
 import CategoryByIdPage from "./pages/CategoryByIdPage.jsx"; // Corrected import name
+import UpdateServiceModal from "./pages/UpdateServiceModalPage.jsx";
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
@@ -83,6 +84,10 @@ const App = () => {
         <Route
           path="/servicePage"
           element={authUser ? <ServicePage /> : <Navigate to="/" />}
+        />
+        <Route
+          path="/updateService/:serviceId"
+          element={authUser ? <UpdateServiceModal /> : <Navigate to="/" />}
         />
       </Routes>
       <Footer />
