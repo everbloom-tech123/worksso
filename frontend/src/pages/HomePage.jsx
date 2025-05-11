@@ -1,13 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { BsChevronCompactRight, BsStarFill } from "react-icons/bs";
-import { Star, Phone } from "lucide-react";
+import { BsStarFill, BsClock } from "react-icons/bs";
+import { Phone, AlertCircle, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { serviceStore } from "../store/serviceStore";
 import { categoryStore } from "../store/categoryStore";
+import { toast } from "react-hot-toast";
 
 const HomePage = () => {
-  const { services, fetchAllServices } = serviceStore();
+  const { services, fetchAllServices, renewService } = serviceStore();
+  const { fetchCategories, categories } = categoryStore();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [filteredServices, setFilteredServices] = useState([]);
 
   const slides = [
     {
@@ -28,26 +33,31 @@ const HomePage = () => {
   ];
 
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    const now = new Date();
+    const activeServices = services
+      .filter((service) => service.isActive)
+      .map((service) => ({
+        ...service,
+        minutesLeft: Math.ceil(
+          (new Date(service.expiresAt) - now) / (1000 * 60)
+        ),
+        isExpiringSoon:
+          Math.ceil((new Date(service.expiresAt) - now) / (1000 * 60)) <= 5,
+      }));
+    setFilteredServices(activeServices);
+  }, [services]);
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([
-      categoryStore.getState().fetchCategories(),
-      fetchAllServices(1, 10),
-    ])
-      .then(([categoryResponse]) => {
-        setCategories(categoryResponse);
-      })
+    Promise.all([fetchCategories(), fetchAllServices(1, 10)])
       .catch((error) => {
         console.error("Error fetching data:", error);
+        toast.error("Failed to load services");
       })
-      .finally(() => {
-        setLoading(false);
-      });
-  }, []);
+      .finally(() => setLoading(false));
+  }, [fetchCategories, fetchAllServices]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -56,11 +66,9 @@ const HomePage = () => {
       );
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [slides.length]);
 
-  const goToSlide = (index) => {
-    setCurrentIndex(index);
-  };
+  const goToSlide = (index) => setCurrentIndex(index);
 
   const loadMore = () => {
     const nextPage = currentPage + 1;
@@ -68,13 +76,13 @@ const HomePage = () => {
     fetchAllServices(nextPage, 10);
   };
 
-  const handleNavigateToProfile = () => {
-    navigate("/profile");
-  };
-
-  // Handle category click to navigate to category-specific service page
-  const handleCategoryClick = (categoryId) => {
-    navigate(`/services/${categoryId}`); // Navigate to ServicePage with categoryId
+  const handleRenewService = async (serviceId) => {
+    try {
+      await renewService(serviceId);
+      toast.success("Service renewed for another 10 minutes!");
+    } catch (error) {
+      toast.error("Failed to renew service");
+    }
   };
 
   return (
@@ -107,16 +115,12 @@ const HomePage = () => {
             <div className="text-xl text-center col-span-full">
               Loading categories...
             </div>
-          ) : categories.length === 0 ? (
-            <div className="text-xl text-center col-span-full">
-              No categories available.
-            </div>
-          ) : (
+          ) : categories?.length > 0 ? (
             categories.map((category) => (
               <div
                 key={category._id}
-                className="p-6 transition duration-300 transform bg-white rounded-lg shadow-lg hover:scale-105"
-                onClick={() => handleCategoryClick(category._id)} // Add click handler
+                className="p-6 transition duration-300 transform bg-white rounded-lg shadow-lg cursor-pointer hover:scale-105"
+                onClick={() => navigate(`/services/${category._id}`)}
               >
                 <img
                   src={category.logo}
@@ -128,6 +132,10 @@ const HomePage = () => {
                 </h3>
               </div>
             ))
+          ) : (
+            <div className="text-xl text-center col-span-full">
+              No categories available.
+            </div>
           )}
         </div>
       </div>
@@ -137,13 +145,26 @@ const HomePage = () => {
           <h2 className="text-3xl font-semibold text-center text-gray-800">
             Popular Services
           </h2>
-          <div className="grid grid-cols-1 gap-8 mt-8 sm:grid-cols-2 lg:grid-cols-3">
-            {services?.length > 0 ? (
-              services.map((service) => (
+
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <div className="w-8 h-8 border-4 border-blue-500 rounded-full animate-spin border-t-transparent"></div>
+            </div>
+          ) : filteredServices?.length > 0 ? (
+            <div className="grid grid-cols-1 gap-8 mt-8 sm:grid-cols-2 lg:grid-cols-3">
+              {filteredServices.map((service) => (
                 <div
                   key={service._id}
-                  className="overflow-hidden transition-all duration-300 transform bg-gray-100 rounded-lg shadow-md hover:scale-105"
+                  className="relative overflow-hidden transition-all duration-300 transform bg-gray-100 rounded-lg shadow-md hover:scale-105"
                 >
+                  {service.isExpiringSoon && (
+                    <div className="absolute flex items-center px-2 py-1 text-xs font-bold text-white bg-yellow-500 rounded-full top-2 left-2">
+                      <BsClock className="mr-1" />
+                      {service.minutesLeft} min
+                      {service.minutesLeft !== 1 ? "s" : ""} left
+                    </div>
+                  )}
+
                   <img
                     src={
                       service.images?.[0] || "https://via.placeholder.com/150"
@@ -151,8 +172,9 @@ const HomePage = () => {
                     alt={service.title}
                     className="object-cover w-full h-64"
                   />
+
                   <div className="p-6">
-                    <div className="flex items-center mb-3">
+                    <div className="flex items-center justify-between mb-3">
                       <div className="flex text-yellow-500">
                         {Array(service.rating || 5)
                           .fill()
@@ -160,52 +182,62 @@ const HomePage = () => {
                             <BsStarFill key={i} size={18} />
                           ))}
                       </div>
-                      <span className="ml-2 text-sm text-gray-500">
-                        ({service.reviews || 0} reviews)
-                      </span>
+                      {service.isExpiringSoon && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRenewService(service._id);
+                          }}
+                          className="flex items-center px-3 py-1 text-xs font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
+                        >
+                          <RefreshCw size={14} className="mr-1" />
+                          Renew
+                        </button>
+                      )}
                     </div>
+
                     <h3 className="text-lg font-semibold text-gray-900">
                       {service.title}
                     </h3>
-                    <p className="mt-2 text-sm text-gray-600">
+                    <p className="mt-2 text-sm text-gray-600 line-clamp-2">
                       {service.description}
                     </p>
+
                     <div className="flex items-center justify-between mt-4">
                       <div className="text-xl font-bold text-gray-900">
                         ${service.price}
                       </div>
                       <div className="flex items-center text-sm text-gray-500">
-                        <Phone size={16} className="mr-2" />{" "}
+                        <Phone size={16} className="mr-2" />
                         {service.number || "N/A"}
                       </div>
                     </div>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="text-xl text-center col-span-full">
-                No services available.
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <AlertCircle size={48} className="mb-4 text-gray-400" />
+              <h3 className="text-xl font-medium text-gray-700">
+                No active services available
+              </h3>
+              <p className="mt-2 text-gray-500">
+                Check back later or create a new service
+              </p>
+            </div>
+          )}
 
-      {/* Call to Action Section */}
-      <div className="py-12 text-white bg-blue-500">
-        <div className="container px-4 mx-auto text-center">
-          <h2 className="mb-4 text-3xl font-bold">
-            Post Your Service for Free
-          </h2>
-          <p className="mb-6 text-xl">
-            Get more customers by posting your service on our platform
-          </p>
-          <button
-            className="px-8 py-4 text-xl font-semibold text-blue-500 transition-all bg-white rounded-full hover:bg-gray-100"
-            onClick={handleNavigateToProfile}
-          >
-            Post Your Service
-          </button>
+          {filteredServices.length > 0 && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={loadMore}
+                className="px-6 py-2 font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
+              >
+                Load More
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

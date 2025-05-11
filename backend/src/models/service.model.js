@@ -24,7 +24,6 @@ const serviceSchema = new mongoose.Schema(
     },
     images: {
       type: [String],
-
       default: [],
     },
     number: {
@@ -40,9 +39,22 @@ const serviceSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
+    expiresAt: {
+      type: Date,
+      default: () => new Date(Date.now() + 10 * 60 * 1000), // 10 minutes from now
+    },
   },
   { timestamps: true }
 );
+
+// Add a method to check if service is active
+serviceSchema.methods.isServiceActive = function () {
+  return this.isActive && new Date() < this.expiresAt;
+};
 
 const Service = mongoose.model("Service", serviceSchema);
 
