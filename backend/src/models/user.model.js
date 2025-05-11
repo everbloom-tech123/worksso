@@ -37,6 +37,18 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"], // Add roles here
       default: "user", // Default role is 'user'
     },
+    lastLogin: {
+      type: Date,
+      default: Date.now,
+    },
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+    resetPasswordToken: String,
+    resetPasswordExpiresAt: Date,
+    verificationToken: String,
+    verificationTokenExpiresAt: Date,
   },
   { timestamps: true }
 );

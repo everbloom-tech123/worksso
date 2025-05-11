@@ -10,18 +10,21 @@ import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 import Footer from "./components/Footer.jsx";
 import AccountSetting from "./pages/AccountSetting.jsx";
-import AdminDashboard from "./pages/AdminDashboard .jsx"; // Removed extra space
+import AdminDashboard from "./pages/AdminDashboard .jsx";
 import CategoryPage from "./pages/CategoryPage.jsx";
-import ServicePage from "./pages/servicePage.jsx"; // Corrected import name
-import CategoryByIdPage from "./pages/CategoryByIdPage.jsx"; // Corrected import name
+import ServicePage from "./pages/ServicePage.jsx";
+import CategoryByIdPage from "./pages/CategoryByIdPage.jsx";
 import UpdateServiceModal from "./pages/UpdateServiceModalPage.jsx";
-import ContactPage from "./pages/contactPage.jsx";
+import ContactPage from "./pages/ContactPage.jsx";
+import EmailVerification from "./pages/EmailVerification.jsx";
+import ForgetPasswordPage from "./pages/ForgetPasswordPage.jsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
 
   useEffect(() => {
-    checkAuth(); // Check the user's auth status on page load
+    checkAuth(); // Check authentication status on page load
   }, [checkAuth]);
 
   if (isCheckingAuth && !authUser)
@@ -34,66 +37,71 @@ const App = () => {
   return (
     <div>
       <Navbar />
-      <Routes>
-        {/* Public routes */}
-        <Route
-          path="/"
-          element={authUser ? <HomePage /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/signup"
-          element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/login"
-          element={!authUser ? <LoginPage /> : <Navigate to="/" />}
-        />
+      <div className="pt-16">
+        <Routes>
+          {/* Public Routes (Accessible without login) */}
+          <Route path="/" element={<HomePage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/services/:categoryId" element={<CategoryByIdPage />} />
+          <Route path="/servicePage" element={<ServicePage />} />
 
-        {/* Protected routes */}
-        <Route
-          path="/profile"
-          element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
-        />
-        <Route
-          path="/accountSetting"
-          element={authUser ? <AccountSetting /> : <Navigate to="/login" />}
-        />
+          {/* Signup & Login (Optional) */}
+          <Route
+            path="/signup"
+            element={!authUser ? <SignUpPage /> : <Navigate to="/" />}
+          />
+          <Route
+            path="/login"
+            element={!authUser ? <LoginPage /> : <Navigate to="/" />}
+          />
+          <Route path="verify-email" element={<EmailVerification />} />
+          <Route path="/forgot-password" element={<ForgetPasswordPage />} />
+          <Route
+            path="/reset-password/:token"
+            element={<ResetPasswordPage />}
+          />
 
-        {/* Admin-only route */}
-        <Route
-          path="/admin/dashboard"
-          element={
-            authUser?.role === "admin" ? (
-              <AdminDashboard />
-            ) : (
-              <Navigate to="/" />
-            )
-          }
-        />
-        <Route
-          path="/admin/category"
-          element={
-            authUser?.role === "admin" ? <CategoryPage /> : <Navigate to="/" />
-          }
-        />
+          {/* Protected Routes (Require login) */}
+          <Route
+            path="/profile"
+            element={authUser ? <ProfilePage /> : <Navigate to="/login" />}
+          />
+          <Route
+            path="/accountSetting"
+            element={authUser ? <AccountSetting /> : <Navigate to="/login" />}
+          />
 
-        {/* Service Page */}
-        <Route
-          path="/services/:categoryId"
-          element={authUser ? <CategoryByIdPage /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/servicePage"
-          element={authUser ? <ServicePage /> : <Navigate to="/" />}
-        />
-        <Route
-          path="/updateService/:serviceId"
-          element={authUser ? <UpdateServiceModal /> : <Navigate to="/" />}
-        />
+          {/* Admin-only Routes */}
+          <Route
+            path="/admin/dashboard"
+            element={
+              authUser?.role === "admin" ? (
+                <AdminDashboard />
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
+          <Route
+            path="/admin/category"
+            element={
+              authUser?.role === "admin" ? (
+                <CategoryPage />
+              ) : (
+                <Navigate to="/" />
+              )
+            }
+          />
 
-        {/* Contact Page */}
-        <Route path="/contact" element={<ContactPage />} />
-      </Routes>
+          {/* Protected Service Update Route */}
+          <Route
+            path="/updateService/:serviceId"
+            element={
+              authUser ? <UpdateServiceModal /> : <Navigate to="/login" />
+            }
+          />
+        </Routes>
+      </div>
       <Footer />
       <Toaster />
     </div>

@@ -4,14 +4,16 @@ import { toast } from "react-toastify";
 import { categoryStore } from "../store/categoryStore";
 import { serviceStore } from "../store/serviceStore";
 import { BsStarFill } from "react-icons/bs";
-import { Phone } from "lucide-react";
+import { Phone, Search } from "lucide-react";
 
 const CategoryByIdPage = () => {
   const { categoryId } = useParams();
   const [categoryName, setCategoryName] = useState("");
   const [services, setServices] = useState([]);
+  const [filteredServices, setFilteredServices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
   const { fetchCategories } = categoryStore();
   const { fetchServicesByCategory } = serviceStore();
 
@@ -26,7 +28,9 @@ const CategoryByIdPage = () => {
         setCategoryName(category ? category.name : "");
 
         const res = await fetchServicesByCategory(categoryId);
-        setServices(Array.isArray(res) ? res : res?.services || []);
+        const servicesData = Array.isArray(res) ? res : res?.services || [];
+        setServices(servicesData);
+        setFilteredServices(servicesData); // Initialize filtered services
       } catch (error) {
         console.error("Error fetching data:", error);
         setError("Failed to load services. Please try again later.");
@@ -39,20 +43,48 @@ const CategoryByIdPage = () => {
     loadCategoryAndServices();
   }, [categoryId, fetchCategories, fetchServicesByCategory]);
 
+  // Filter services based on search term
+  useEffect(() => {
+    if (searchTerm.trim() === "") {
+      setFilteredServices(services);
+    } else {
+      const filtered = services.filter(
+        (service) =>
+          service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          service.description.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredServices(filtered);
+    }
+  }, [searchTerm, services]);
+
   return (
     <div className="flex justify-center px-4 py-8">
       <div className="w-full max-w-4xl p-6 bg-white rounded-lg shadow-md">
-        <h1 className="text-3xl font-semibold text-center text-gray-800">
+        <h1 className="text-3xl font-semibold text-center text-gray-800 mb-6">
           {categoryName ? `Services in ${categoryName}` : "Services"}
         </h1>
+
+        {/* Search Bar */}
+        <div className="relative mb-6">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+            <Search className="text-gray-400" size={20} />
+          </div>
+          <input
+            type="text"
+            placeholder="Search services..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full p-2 pl-10 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
 
         {loading ? (
           <div className="mt-6 text-center">Loading services...</div>
         ) : error ? (
           <div className="mt-6 text-center text-red-500">{error}</div>
-        ) : services.length > 0 ? (
+        ) : filteredServices.length > 0 ? (
           <div className="mt-6 space-y-6">
-            {services.map((service) => (
+            {filteredServices.map((service) => (
               <div
                 key={service._id}
                 className="flex flex-col items-center p-4 bg-gray-100 rounded-lg shadow-sm md:flex-row"
@@ -99,6 +131,10 @@ const CategoryByIdPage = () => {
                 </button>
               </div>
             ))}
+          </div>
+        ) : searchTerm ? (
+          <div className="mt-6 text-xl text-center">
+            No services found matching "{searchTerm}"
           </div>
         ) : (
           <div className="mt-6 text-xl text-center">No services available.</div>
