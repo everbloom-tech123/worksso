@@ -12,12 +12,9 @@ export const useAuthStore = create((set) => ({
   checkAuth: async () => {
     try {
       const res = await axiosInstance.get("/auth/check");
-      set({ authUser: res.data });
+      set({ authUser: res.data || null });
     } catch (error) {
-      console.log(
-        "Error in checkAuth:",
-        error.response ? error.response.data : error
-      );
+      console.error("Error in checkAuth:", error.response?.data || error);
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
@@ -28,12 +25,33 @@ export const useAuthStore = create((set) => ({
     set({ isSigningUp: true });
     try {
       const res = await axiosInstance.post("/auth/signup", data);
-      toast.success("Account created successfully");
-      set({ authUser: res.data });
+      if (res?.data) {
+        set({ authUser: res.data });
+        toast.success("Account created successfully");
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
     } finally {
       set({ isSigningUp: false });
+    }
+  },
+
+  login: async (data) => {
+    set({ isLoggingIn: true });
+    try {
+      const res = await axiosInstance.post("/auth/login", data);
+      if (res?.data) {
+        set({ authUser: res.data });
+        toast.success("Logged in successfully");
+      } else {
+        throw new Error("Invalid response from server");
+      }
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Invalid credentials");
+    } finally {
+      set({ isLoggingIn: false });
     }
   },
 
@@ -47,16 +65,35 @@ export const useAuthStore = create((set) => ({
     }
   },
 
-  login: async (data) => {
-    set({ isLoggingIn: true });
+  verifyEmail: async (code) => {
     try {
-      const res = await axiosInstance.post("/auth/login", data);
-      toast.success("Logged in successfully");
-      set({ authUser: res.data });
+      const res = await axiosInstance.post("/auth/verify-email", { code });
+      if (res?.data?.user) {
+        set({ authUser: res.data.user });
+        toast.success(res.data.message || "Email verified successfully");
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (error) {
-      toast.error(error.response?.data?.message || "Invalid Credentials");
-    } finally {
-      set({ isLoggingIn: false });
+      toast.error(error.response?.data?.message || "Invalid verification code");
+    }
+  },
+
+  forgotPassword: async (email) => {
+    try {
+      await axiosInstance.post("/auth/forgot-password", { email });
+      toast.success("Password reset link sent to your email");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Invalid email");
+    }
+  },
+
+  resetPassword: async (data) => {
+    try {
+      await axiosInstance.post(`/auth/reset-password/${data.token}`, data);
+      toast.success("Password reset successfully");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Invalid token");
     }
   },
 
@@ -64,7 +101,7 @@ export const useAuthStore = create((set) => ({
     set({ isUpdatingProfile: true });
     try {
       const res = await axiosInstance.put("/auth/update-profile", data);
-      if (res && res.data) {
+      if (res?.data) {
         set({ authUser: res.data });
         toast.success("Profile updated successfully");
       } else {
@@ -72,9 +109,7 @@ export const useAuthStore = create((set) => ({
       }
     } catch (error) {
       console.error("Error in updateProfile:", error);
-      const errorMessage =
-        error.response?.data?.message || "Unexpected error occurred";
-      toast.error(errorMessage);
+      toast.error(error.response?.data?.message || "Unexpected error occurred");
     } finally {
       set({ isUpdatingProfile: false });
     }

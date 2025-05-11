@@ -1,156 +1,222 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
+import { Menu, X, Search } from "lucide-react";
 
-const Navbar = () => {
+const Navbar = ({ data = [] }) => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchActive, setIsSearchActive] = useState(false);
+  const dropdownRef = useRef(null);
+  const menuRef = useRef(null);
+  const searchRef = useRef(null);
   const navigate = useNavigate();
   const { logout, authUser } = useAuthStore();
+  const [search, setSearch] = useState(data.search || "");
+  const [suggestions, setSuggestions] = useState([]);
 
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+  // Toggle functions
+  const toggleDropdown = () => setIsDropdownOpen(prev => !prev);
+  const toggleMenu = () => setIsMenuOpen(prev => !prev);
+  const toggleSearch = () => {
+    setIsSearchActive(prev => !prev);
+    if (!isSearchActive) {
+      setTimeout(() => {
+        searchRef.current?.querySelector('input')?.focus();
+      }, 0);
+    }
   };
 
-  const handleLogin = () => {
-    window.location.href = "/login"; // Redirect to login page
-  };
-  const handleImageClick = () => {
-    navigate("/"); // Navigate to home page
+  // Handle click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setIsSearchActive(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    data.setSearch?.(e.target.value);
+    setSuggestions(
+      e.target.value
+        ? ["Doctor", "Appointment", "Pharmacy", "Hospital", "Clinic"].filter(
+            (item) => item.toLowerCase().includes(e.target.value.toLowerCase())
+          )
+        : []
+    );
   };
 
   return (
-    <nav className="flex items-center justify-between px-3 py-3 bg-blue-500 shadow-md">
-      {/* Logo and Search */}
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center">
-          <img
-            onClick={handleImageClick}
-            src="../../Images/wlogo.png"
-            alt="Logo"
-            className="w-12 h-10"
-          />
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-blue-500 shadow-md">
+      <div className="flex items-center justify-between px-4 py-3 md:px-8">
+        {/* Logo */}
+        <img
+          onClick={() => navigate("/")}
+          src="/Images/wlogo.png"
+          alt="Logo"
+          className="w-12 h-10 cursor-pointer"
+        />
+
+        {/* Desktop Search Bar */}
+        <div className="relative flex-grow hidden max-w-md mx-4 md:block">
+          <div className="relative" ref={searchRef}>
+            <input
+              type="text"
+              value={search}
+              onChange={handleSearch}
+              placeholder="Search services..."
+              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
+              onFocus={() => setIsSearchActive(true)}
+            />
+            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+            {isSearchActive && suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 z-10 mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+                {suggestions.map((item, index) => (
+                  <div
+                    key={index}
+                    className="px-4 py-2 cursor-pointer hover:bg-blue-50"
+                    onClick={() => {
+                      setSearch(item);
+                      data.setSearch?.(item);
+                      setIsSearchActive(false);
+                    }}
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-        <div className="relative">
-          <input
-            type="text"
-            placeholder="Search here"
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring focus:ring-blue-300"
-          />
-          <button
-            type="submit"
-            className="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-500"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="2"
-              stroke="currentColor"
-              className="w-5 h-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M21 21l-4.35-4.35m0 0a7.5 7.5 0 1 0-10.607-10.607 7.5 7.5 0 0 0 10.607 10.607z"
+
+        {/* Mobile Search Toggle */}
+        <button
+          className="p-2 text-white md:hidden"
+          onClick={toggleSearch}
+          aria-label="Search"
+        >
+          <Search size={24} />
+        </button>
+
+        {/* Navigation Links & Profile */}
+        <div className="flex items-center space-x-5 text-white">
+          <ul className="hidden space-x-5 font-medium md:flex">
+            <li><a href="/" className="hover:underline">Home</a></li>
+            <li><a href="/servicePage" className="hover:underline">Services</a></li>
+            <li><a href="/contact" className="hover:underline">Contact</a></li>
+            <li><a href="/about" className="hover:underline">About</a></li>
+          </ul>
+          
+          {/* Profile/Login */}
+          {authUser ? (
+            <div className="relative" ref={dropdownRef}>
+              <img
+                src={authUser.profilePic || "/Images/avatar.png"}
+                alt="Profile"
+                className="w-10 h-10 border-gray-300 rounded-full cursor-pointer"
+                onClick={toggleDropdown}
               />
-            </svg>
+              {isDropdownOpen && (
+                <div className="absolute right-0 mt-2 bg-white border border-gray-200 rounded-md shadow-lg">
+                  <a href="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                  {authUser.role === "admin" && (
+                    <a href="/admin/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Admin Dashboard</a>
+                  )}
+                  <button onClick={logout} className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100">
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              className="px-4 py-2 text-blue-500 bg-white rounded-md hover:bg-blue-100"
+              onClick={() => navigate("/login")}
+            >
+              Login
+            </button>
+          )}
+          
+          {/* Mobile Menu Button */}
+          <button className="text-white md:hidden" onClick={toggleMenu}>
+            {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
       </div>
 
-      {/* Navigation Links */}
-      <ul className="flex items-center ml-5 space-x-5 font-medium text-white">
-        <li>
-          <a href="/" className="hover:underline">
-            Home
-          </a>
-        </li>
-        <li>
-          <a href="/servicePage" className="hover:underline">
-            Services
-          </a>
-        </li>
-
-        <li>
-          <a href="/contact" className="hover:underline">
-            Contact us
-          </a>
-        </li>
-        <li>
-          <a href="#" className="hover:underline">
-            About
-          </a>
-        </li>
-
-        {/* Login or Profile Dropdown */}
-        {authUser ? (
-          <div className="relative">
-            <div
-              className="flex items-center space-x-2 cursor-pointer"
-              onClick={toggleDropdown}
-            >
-              <img
-                src={authUser.profilePic || "../../Images/avatar.png"}
-                alt="Profile"
-                className="object-cover w-10 h-10 border-gray-300 rounded-full"
-              />
-
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                stroke="currentColor"
-                className="w-5 h-5 text-white"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 9l6 6 6-6"
-                />
-              </svg>
-            </div>
-
-            {/* Dropdown Menu */}
-            {isDropdownOpen && (
-              <div className="absolute right-0 z-10 w-48 mt-2 bg-white border border-gray-200 rounded-md shadow-lg">
-                <a
-                  href="/profile"
-                  className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                >
-                  Profile
-                </a>
-
-                {/* Admin Dashboard Link (Only if user is admin) */}
-                {authUser.role === "admin" && (
-                  <a
-                    href="/admin/dashboard"
-                    className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+      {/* Mobile Search Bar */}
+      {isSearchActive && (
+        <div className="p-3 bg-white border-t border-gray-200 md:hidden">
+          <div className="relative" ref={searchRef}>
+            <input
+              type="text"
+              value={search}
+              onChange={handleSearch}
+              placeholder="Search services..."
+              className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-300"
+              autoFocus
+            />
+            <Search className="absolute left-3 top-2.5 text-gray-400" size={18} />
+            {suggestions.length > 0 && (
+              <div className="absolute left-0 right-0 z-10 mt-1 bg-white border border-gray-200 rounded-md shadow-lg">
+                {suggestions.map((item, index) => (
+                  <div
+                    key={index}
+                    className="px-4 py-2 cursor-pointer hover:bg-blue-50"
+                    onClick={() => {
+                      setSearch(item);
+                      data.setSearch?.(item);
+                      setIsSearchActive(false);
+                    }}
                   >
-                    Admin Dashboard
-                  </a>
-                )}
-
-                <a
-                  onClick={logout}
-                  className="block px-4 py-2 text-gray-700 cursor-pointer hover:bg-gray-100"
-                >
-                  Logout
-                </a>
+                    {item}
+                  </div>
+                ))}
               </div>
             )}
           </div>
-        ) : (
-          <li>
-            <button
-              className="px-4 py-2 text-blue-500 bg-white rounded-md hover:bg-blue-100"
-              onClick={handleLogin}
-            >
-              Login
-            </button>
-          </li>
-        )}
-      </ul>
+        </div>
+      )}
+
+      {/* Mobile Menu */}
+      {isMenuOpen && (
+        <div ref={menuRef} className="p-4 bg-white border-t border-gray-200 md:hidden">
+          <ul className="flex flex-col space-y-4 text-gray-700">
+            <li><a href="/" className="hover:text-blue-500">Home</a></li>
+            <li><a href="/servicePage" className="hover:text-blue-500">Services</a></li>
+            <li><a href="/contact" className="hover:text-blue-500">Contact</a></li>
+            <li><a href="/about" className="hover:text-blue-500">About</a></li>
+            {authUser ? (
+              <>
+                <a href="/profile" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Profile</a>
+                {authUser.role === "admin" && (
+                  <a href="/admin/dashboard" className="block px-4 py-2 text-gray-700 hover:bg-gray-100">Admin Dashboard</a>
+                )}
+                <button onClick={logout} className="block w-full px-4 py-2 text-left text-gray-700 hover:bg-gray-100">
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                className="px-4 py-2 text-blue-500 bg-white rounded-md hover:bg-blue-100"
+                onClick={() => navigate("/login")}
+              >
+                Login
+              </button>
+            )}
+          </ul>
+        </div>
+      )}
     </nav>
   );
 };

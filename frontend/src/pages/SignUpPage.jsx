@@ -3,6 +3,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 
 const SignUpPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -10,8 +11,8 @@ const SignUpPage = () => {
     fullName: "",
     email: "",
     password: "",
-    confirmPassword: "",
   });
+  const navigate = useNavigate();
 
   const { signup, isSigningUp } = useAuthStore();
 
@@ -48,24 +49,27 @@ const SignUpPage = () => {
       return false;
     }
 
-    // Check if confirm password is provided
-    if (
-      formData.confirmPassword &&
-      formData.password !== formData.confirmPassword
-    ) {
-      toast.error("Passwords do not match");
-      return false;
-    }
-
     // If all validations pass
     return true;
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault(); // Prevent form submission from default behavior
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) return;
 
-    if (validateForm()) {
-      signup(formData); // Proceed to signup if validation passes
+    try {
+      await signup({
+        fullName: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      toast.success("Signup successful! Redirecting...");
+      navigate("/verify-email");
+    } catch (error) {
+      console.error(error);
+      toast.error(error.response?.data?.message || "Signup failed");
     }
   };
 
@@ -153,28 +157,6 @@ const SignUpPage = () => {
                     <Eye className="size-5 text-base-content/40" />
                   )}
                 </button>
-              </div>
-
-              <div className="mb-4">
-                <label
-                  htmlFor="confirmPassword"
-                  className="block mb-2 text-gray-600"
-                >
-                  Confirm Password
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      confirmPassword: e.target.value,
-                    })
-                  }
-                  placeholder="Confirm your Password"
-                  className="w-full px-4 py-2 border rounded-lg bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400"
-                />
               </div>
 
               <button

@@ -5,6 +5,9 @@ import {
   signup,
   updateProfile,
   checkAuth,
+  verifyEmail,
+  forgotPassword,
+  resetPassword,
 } from "../controllers/auth.controllers.js";
 import { protectRoute } from "../middleware/auth.middleware.js";
 
@@ -13,7 +16,10 @@ const router = express.Router();
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/logout", logout);
-router.put("/update-profile", protectRoute, updateProfile);
+router.post("/verify-email", verifyEmail);
+router.post("/forgot-password", forgotPassword);
+router.post("/reset-password/:token", resetPassword);
+router.post("/update-profile", protectRoute, updateProfile);
 router.get("/check", protectRoute, checkAuth);
 
 export default router;

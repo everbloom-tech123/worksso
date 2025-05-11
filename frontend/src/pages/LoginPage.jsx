@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useAuthStore } from "../store/useAuthStore";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -103,6 +104,14 @@ const LoginPage = () => {
               <a href="/signup" className="text-blue-500 hover:underline">
                 Sign Up
               </a>
+            </p>
+            <p className="mt-4 text-sm text-gray-600">
+              <Link
+                to="/forgot-password"
+                className="text-blue-500 hover:underline"
+              >
+                Forgot Password?
+              </Link>
             </p>
           </div>
         </div>

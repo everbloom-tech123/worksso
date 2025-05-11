@@ -1,72 +1,352 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  Camera,
+  Mail,
+  User,
+  MapPin,
+  Phone,
+  Info,
+  Star,
+  Clock,
+  RefreshCw,
+  Bell,
+  X,
+  AlertTriangle,
+  BarChart2,
+  Filter,
+  Search,
+  Plus,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { useAuthStore } from "../store/useAuthStore";
 import { serviceStore } from "../store/serviceStore";
-import { Camera, Mail, User, MapPin, Phone, Info, Star } from "lucide-react"; // Added Star import
+import { toast } from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import ServiceForm from "./ServiceForm";
 import UpdateServiceModal from "./UpdateServiceModalPage";
-
+import ServiceStatusBadge from "../Services/ServiceStatusBadge.jsx";
+import ServiceAnalyticsChart from "../Services/ServiceAnalyticsChart.jsx";
 const ProfilePage = () => {
+  // State and store hooks
   const { authUser, logout, isUpdatingProfile, updateProfile } = useAuthStore();
+  const {
+    services,
+    fetchServicesByUserId,
+    deleteService,
+    updateService,
+    renewService,
+    isRenewingService,
+  } = serviceStore();
+  const navigate = useNavigate();
+  const servicesEndRef = useRef(null);
+
+  // Component state
   const [selectedImg, setSelectedImg] = useState(null);
   const [isServiceFormOpen, setIsServiceFormOpen] = useState(false);
   const [serviceToUpdate, setServiceToUpdate] = useState(null);
   const [isUpdateModalOpen, setIsUpdateModalOpen] = useState(false);
-  const { services, fetchServices, deleteService, updateService } =
-    serviceStore();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showInactiveNotification, setShowInactiveNotification] =
+    useState(false);
+  const [inactiveServicesCount, setInactiveServicesCount] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [sortConfig, setSortConfig] = useState({
+    key: "createdAt",
+    direction: "desc",
+  });
+  const [showAnalytics, setShowAnalytics] = useState(false);
+  const [expandedServiceId, setExpandedServiceId] = useState(null);
 
+  // Service statistics
+  const [serviceStats, setServiceStats] = useState({
+    active: 0,
+    expiringSoon: 0,
+    expired: 0,
+    total: 0,
+  });
+
+  // Fetch services on mount
   useEffect(() => {
-    fetchServices();
-  }, [fetchServices]);
+    const loadData = async () => {
+      try {
+        await fetchServicesByUserId();
+      } catch (error) {
+        toast.error("Failed to load services");
+        console.error("Error fetching services:", error);
+      }
+    };
+    loadData();
+  }, [fetchServicesByUserId]);
 
+  // Calculate service statistics and check for inactive services
+  useEffect(() => {
+    if (services && services.length > 0) {
+      const now = new Date();
+      let active = 0,
+        expiringSoon = 0,
+        expired = 0;
+
+      services.forEach((service) => {
+        const expiryDate = new Date(service.expiresAt);
+        const minutesLeft = Math.ceil((expiryDate - now) / (1000 * 60));
+
+        if (minutesLeft <= 0) expired++;
+        else if (minutesLeft <= 5) expiringSoon++;
+        else active++;
+      });
+
+      setServiceStats({
+        active,
+        expiringSoon,
+        expired,
+        total: services.length,
+      });
+
+      setInactiveServicesCount(expired);
+
+      if (
+        expired > 0 &&
+        localStorage.getItem("inactiveNotificationDismissed") !== "true"
+      ) {
+        setShowInactiveNotification(true);
+      }
+    }
+  }, [services]);
+
+  // Filter and sort services
+  const filteredServices = React.useMemo(() => {
+    let result = services ? [...services] : [];
+
+    // Apply search filter
+    if (searchTerm) {
+      result = result.filter(
+        (service) =>
+          service.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          service.description
+            .toLowerCase()
+            .includes(searchTerm.toLowerCase()) ||
+          service.category.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    // Apply status filter
+    if (filter !== "all") {
+      const now = new Date();
+      result = result.filter((service) => {
+        const expiryDate = new Date(service.expiresAt);
+        const minutesLeft = Math.ceil((expiryDate - now) / (1000 * 60));
+
+        if (filter === "active") return minutesLeft > 5;
+        if (filter === "expiring") return minutesLeft > 0 && minutesLeft <= 5;
+        if (filter === "expired") return minutesLeft <= 0;
+        return true;
+      });
+    }
+
+    // Apply sorting
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        if (a[sortConfig.key] < b[sortConfig.key]) {
+          return sortConfig.direction === "asc" ? -1 : 1;
+        }
+        if (a[sortConfig.key] > b[sortConfig.key]) {
+          return sortConfig.direction === "asc" ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+
+    return result;
+  }, [services, searchTerm, filter, sortConfig]);
+
+  // Request sort
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Handler functions
   const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-
-    reader.onload = async () => {
-      const base64Image = reader.result;
-      setSelectedImg(base64Image);
-      await updateProfile({ profilePic: base64Image });
-    };
-  };
-
-  const handleDeleteService = (serviceId) => {
-    deleteService(serviceId);
-  };
-
-  const openUpdateModal = (service) => {
-    setServiceToUpdate(service); // Set the service to be updated
-    setIsUpdateModalOpen(true); // Open the update modal
-  };
-
-  const closeUpdateModal = () => {
-    setIsUpdateModalOpen(false); // Close the update modal
-  };
-
-  const handleServiceUpdate = async (updatedServiceData) => {
     try {
-      await updateService(serviceToUpdate._id, updatedServiceData);
-      closeUpdateModal(); // Close modal after successful update
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+
+      reader.onload = async () => {
+        const base64Image = reader.result;
+        setSelectedImg(base64Image);
+        await updateProfile({ profilePic: base64Image });
+        toast.success("Profile picture updated successfully");
+      };
     } catch (error) {
-      console.error("Error updating service:", error);
+      toast.error("Failed to update profile picture");
+      console.error("Error uploading image:", error);
     }
   };
 
+  const handleDeleteService = async (serviceId) => {
+    if (isDeleting) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteService(serviceId);
+      toast.success("Service deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete service");
+      console.error("Error deleting service:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleRenewService = async (serviceId) => {
+    try {
+      await renewService(serviceId);
+      toast.success("Service renewed for another 10 minutes!");
+    } catch (error) {
+      toast.error("Failed to renew service");
+      console.error("Error renewing service:", error);
+    }
+  };
+
+  const handleRenewAllExpired = async () => {
+    try {
+      const expiredServices = filteredServices.filter((service) => {
+        const expiryDate = new Date(service.expiresAt);
+        return expiryDate <= new Date();
+      });
+
+      await Promise.all(
+        expiredServices.map((service) => renewService(service._id))
+      );
+      toast.success(`Renewed ${expiredServices.length} services successfully!`);
+    } catch (error) {
+      toast.error("Failed to renew all services");
+      console.error("Error renewing services:", error);
+    }
+  };
+
+  const getServiceStatus = (expiresAt) => {
+    const now = new Date();
+    const expiryDate = new Date(expiresAt);
+    const minutesLeft = Math.ceil((expiryDate - now) / (1000 * 60));
+
+    return {
+      isExpired: minutesLeft <= 0,
+      isExpiringSoon: minutesLeft > 0 && minutesLeft <= 5,
+      minutesLeft,
+    };
+  };
+
+  const dismissNotification = () => {
+    setShowInactiveNotification(false);
+    localStorage.setItem("inactiveNotificationDismissed", "true");
+  };
+
+  const scrollToServices = () => {
+    servicesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const toggleServiceExpand = (serviceId) => {
+    setExpandedServiceId(expandedServiceId === serviceId ? null : serviceId);
+  };
+
+  // Helper Components
+  const ProfileInfoItem = ({ icon, label, value }) => (
+    <div className="space-y-1">
+      <div className="flex items-center gap-2 text-sm text-gray-500">
+        {icon}
+        {label}
+      </div>
+      <div className="px-3 py-2 bg-white border border-gray-200 rounded-md">
+        {value || "Not provided"}
+      </div>
+    </div>
+  );
+
+  const SortIndicator = ({ columnKey }) => (
+    <span className="ml-1">
+      {sortConfig.key === columnKey ? (
+        sortConfig.direction === "asc" ? (
+          <ChevronUp size={14} />
+        ) : (
+          <ChevronDown size={14} />
+        )
+      ) : null}
+    </span>
+  );
+
   return (
     <div className="flex flex-col items-center justify-center py-10 bg-gray-100">
-      <div className="grid w-full max-w-4xl grid-cols-1 gap-8 p-6 bg-white rounded-md shadow-lg md:grid-cols-2">
-        {/* Profile Details Section */}
-        <div className="p-6 space-y-8 bg-base-300 rounded-xl">
+      {/* Advanced Notification System */}
+      {showInactiveNotification && inactiveServicesCount > 0 && (
+        <div className="fixed z-50 w-full max-w-md p-4 border-l-4 border-orange-500 rounded-lg shadow-lg top-4 right-4 bg-gradient-to-r from-yellow-100 to-orange-100 animate-pulse">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start">
+              <AlertTriangle className="w-5 h-5 text-orange-600 mr-2 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="font-medium text-orange-800">
+                  {inactiveServicesCount} Service
+                  {inactiveServicesCount !== 1 ? "s" : ""} Need Attention
+                </h3>
+                <p className="mt-1 text-sm text-orange-600">
+                  You have {inactiveServicesCount} expired service
+                  {inactiveServicesCount !== 1 ? "s" : ""}. Renew them to keep
+                  them active.
+                </p>
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => {
+                      dismissNotification();
+                      scrollToServices();
+                    }}
+                    className="text-sm font-medium text-orange-700 underline hover:text-orange-900"
+                  >
+                    View Services
+                  </button>
+                  <button
+                    onClick={handleRenewAllExpired}
+                    className="flex items-center px-2 py-1 text-sm font-medium text-white bg-orange-600 rounded hover:bg-orange-700"
+                  >
+                    <RefreshCw className="w-3 h-3 mr-1" />
+                    Renew All
+                  </button>
+                </div>
+              </div>
+            </div>
+            <button
+              onClick={dismissNotification}
+              className="ml-2 text-orange-600 hover:text-orange-800"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Profile Overview Section */}
+      <div className="grid w-full max-w-6xl grid-cols-1 gap-8 p-6 bg-white rounded-md shadow-lg md:grid-cols-3">
+        {/* Profile Card */}
+        <div className="p-6 space-y-8 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl md:col-span-1">
           <div className="text-center">
-            <h1 className="text-2xl font-semibold">Profile</h1>
-            <p className="mt-2">Your profile information</p>
+            <h1 className="text-2xl font-semibold text-gray-800">
+              Profile Overview
+            </h1>
+            <p className="mt-2 text-sm text-gray-500">
+              Manage your account and services
+            </p>
           </div>
 
-          {/* Avatar Upload Section */}
+          {/* Avatar Upload */}
           <div className="flex flex-col items-center gap-4">
-            <div className="relative">
+            <div className="relative group">
               <img
                 src={
                   selectedImg ||
@@ -74,15 +354,15 @@ const ProfilePage = () => {
                   "../../Images/avatar.png"
                 }
                 alt="Profile"
-                className="object-cover border-4 rounded-full size-32"
+                className="object-cover w-32 h-32 transition-all duration-300 border-4 border-white rounded-full shadow-md group-hover:opacity-90"
               />
               <label
                 htmlFor="avatar-upload"
-                className={`absolute bottom-0 right-0 bg-base-content hover:scale-105 p-2 rounded-full cursor-pointer transition-all duration-200 ${
-                  isUpdatingProfile ? "animate-pulse pointer-events-none" : ""
+                className={`absolute inset-0 flex items-center justify-center w-32 h-32 rounded-full bg-black bg-opacity-0 group-hover:bg-opacity-30 cursor-pointer transition-all duration-300 ${
+                  isUpdatingProfile ? "animate-pulse" : ""
                 }`}
               >
-                <Camera className="w-5 h-5 text-base-200" />
+                <Camera className="w-6 h-6 text-white transition-opacity duration-300 opacity-0 group-hover:opacity-100" />
                 <input
                   type="file"
                   id="avatar-upload"
@@ -93,174 +373,348 @@ const ProfilePage = () => {
                 />
               </label>
             </div>
-            <p className="text-sm text-zinc-400">
-              {isUpdatingProfile
-                ? "Uploading..."
-                : "Click the camera icon to update your photo"}
+            <p className="text-sm text-gray-400">
+              {isUpdatingProfile ? "Uploading..." : "Click image to update"}
             </p>
           </div>
 
           {/* Profile Info */}
-          <div className="space-y-6">
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <User className="w-4 h-4" />
-                Full Name
+          <div className="space-y-4">
+            <ProfileInfoItem
+              icon={<User className="w-4 h-4" />}
+              label="Full Name"
+              value={authUser?.fullName}
+            />
+            <ProfileInfoItem
+              icon={<Mail className="w-4 h-4" />}
+              label="Email Address"
+              value={authUser?.email}
+            />
+            <ProfileInfoItem
+              icon={<MapPin className="w-4 h-4" />}
+              label="Location"
+              value={authUser?.location}
+            />
+            <ProfileInfoItem
+              icon={<Phone className="w-4 h-4" />}
+              label="Phone Number"
+              value={authUser?.phone}
+            />
+          </div>
+        </div>
+
+        {/* Stats and Analytics Card */}
+        <div className="p-6 space-y-6 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl md:col-span-2">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-800">
+              Service Analytics
+            </h2>
+            <button
+              onClick={() => setShowAnalytics(!showAnalytics)}
+              className="flex items-center text-sm text-purple-600 hover:text-purple-800"
+            >
+              <BarChart2 className="w-4 h-4 mr-1" />
+              {showAnalytics ? "Hide Charts" : "Show Charts"}
+            </button>
+          </div>
+
+          {showAnalytics && (
+            <div className="mt-4">
+              <ServiceAnalyticsChart services={services} />
+            </div>
+          )}
+
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 gap-4 mt-4 sm:grid-cols-3">
+            <div className="p-4 bg-white rounded-lg shadow">
+              <div className="text-sm font-medium text-gray-500">
+                Total Services
               </div>
-              <p className="px-4 py-2.5 bg-base-200 rounded-lg border">
-                {authUser?.fullName || "Not provided"}
-              </p>
+              <div className="mt-1 text-2xl font-semibold text-gray-900">
+                {serviceStats.total}
+              </div>
+            </div>
+            <div className="p-4 bg-white rounded-lg shadow">
+              <div className="text-sm font-medium text-gray-500">
+                Active Services
+              </div>
+              <div className="mt-1 text-2xl font-semibold text-green-600">
+                {serviceStats.active}
+              </div>
+            </div>
+            <div className="p-4 bg-white rounded-lg shadow">
+              <div className="text-sm font-medium text-gray-500">
+                Need Attention
+              </div>
+              <div className="mt-1 text-2xl font-semibold text-yellow-600">
+                {serviceStats.expiringSoon + serviceStats.expired}
+              </div>
+            </div>
+          </div>
+
+          {/* Quick Actions */}
+          <div className="grid grid-cols-2 gap-4 mt-6">
+            <button
+              onClick={() => setIsServiceFormOpen(true)}
+              className="flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Service
+            </button>
+            <button
+              onClick={() => navigate("/accountSetting")}
+              className="flex items-center justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Account Settings
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Services Management Section */}
+      <div className="w-full max-w-6xl mt-8 space-y-6">
+        {/* Services Header */}
+        <div className="flex flex-col justify-between p-6 bg-white rounded-lg shadow-md md:flex-row">
+          <div>
+            <h1 className="text-2xl font-semibold text-gray-800">
+              Service Management
+            </h1>
+            <p className="mt-1 text-sm text-gray-500">
+              Manage your {serviceStats.total} service
+              {serviceStats.total !== 1 ? "s" : ""}
+            </p>
+          </div>
+          <div className="flex items-center mt-4 md:mt-0">
+            {inactiveServicesCount > 0 && (
+              <button
+                onClick={handleRenewAllExpired}
+                className="flex items-center px-3 py-1 mr-4 text-sm font-medium text-white bg-orange-500 rounded-lg hover:bg-orange-600"
+              >
+                <RefreshCw className="w-4 h-4 mr-1" />
+                Renew All ({inactiveServicesCount})
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Services Toolbar */}
+        <div className="p-4 bg-white rounded-lg shadow">
+          <div className="flex flex-col items-center justify-between gap-4 md:flex-row">
+            <div className="relative w-full md:w-64">
+              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                <Search className="w-5 h-5 text-gray-400" />
+              </div>
+              <input
+                type="text"
+                className="w-full py-2 pl-10 pr-3 text-sm border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Search services..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
 
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <Mail className="w-4 h-4" />
-                Email Address
+            <div className="flex items-center w-full gap-4 md:w-auto">
+              <div className="relative">
+                <select
+                  className="py-2 pl-3 pr-8 text-sm bg-white border border-gray-300 rounded-lg appearance-none focus:ring-blue-500 focus:border-blue-500"
+                  value={filter}
+                  onChange={(e) => setFilter(e.target.value)}
+                >
+                  <option value="all">All Services</option>
+                  <option value="active">Active</option>
+                  <option value="expiring">Expiring Soon</option>
+                  <option value="expired">Expired</option>
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <Filter className="w-4 h-4 text-gray-400" />
+                </div>
               </div>
-              <p className="px-4 py-2.5 bg-base-200 rounded-lg border">
-                {authUser?.email || "Not provided"}
-              </p>
-            </div>
 
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <MapPin className="w-4 h-4" />
-                Location
+              <div className="items-center hidden space-x-1 sm:flex">
+                <span className="text-sm text-gray-500">Sort:</span>
+                <button
+                  onClick={() => requestSort("title")}
+                  className="flex items-center text-sm font-medium text-gray-700 hover:text-blue-600"
+                >
+                  Name <SortIndicator columnKey="title" />
+                </button>
+                <span className="text-gray-400">|</span>
+                <button
+                  onClick={() => requestSort("createdAt")}
+                  className="flex items-center text-sm font-medium text-gray-700 hover:text-blue-600"
+                >
+                  Date <SortIndicator columnKey="createdAt" />
+                </button>
               </div>
-              <p className="px-4 py-2.5 bg-base-200 rounded-lg border">
-                {authUser?.location || "Not provided"}
-              </p>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <Phone className="w-4 h-4" />
-                Phone Number
-              </div>
-              <p className="px-4 py-2.5 bg-base-200 rounded-lg border">
-                {authUser?.phone || "Not provided"}
-              </p>
-            </div>
-
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-sm text-zinc-400">
-                <Info className="w-4 h-4" />
-                Bio
-              </div>
-              <p className="px-4 py-2.5 bg-base-200 rounded-lg border">
-                {authUser?.bio || "Not provided"}
-              </p>
             </div>
           </div>
         </div>
 
-        {/* Settings Section */}
-        <div className="p-6 space-y-4 bg-base-300 rounded-xl">
-          <h2 className="text-xl font-semibold">Settings</h2>
-          <button
-            className="w-full px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-            onClick={() => (window.location.href = "/accountSetting")}
-          >
-            Account Setting
-          </button>
-          <button
-            className="w-full px-4 py-2 text-sm font-semibold text-gray-700 border border-gray-300 rounded-md hover:bg-gray-50"
-            onClick={logout}
-          >
-            Log Out
-          </button>
+        {/* Services List */}
+        <div className="space-y-4">
+          {filteredServices && filteredServices.length > 0 ? (
+            filteredServices.map((service) => {
+              const { isExpired, isExpiringSoon, minutesLeft } =
+                getServiceStatus(service.expiresAt);
+              const isExpanded = expandedServiceId === service._id;
+
+              return (
+                <div
+                  key={service._id}
+                  className={`p-4 bg-white rounded-lg shadow-sm transition-all duration-200 ${
+                    isExpired
+                      ? "border-l-4 border-red-500"
+                      : isExpiringSoon
+                      ? "border-l-4 border-yellow-500"
+                      : "border-l-4 border-green-500"
+                  }`}
+                >
+                  <div className="flex flex-col md:flex-row md:items-center">
+                    {/* Service Image */}
+                    <div className="relative flex-shrink-0 w-full h-40 overflow-hidden rounded-lg md:w-48">
+                      <img
+                        src={
+                          service.images[0] || "https://via.placeholder.com/150"
+                        }
+                        alt={service.title}
+                        className="object-cover w-full h-full"
+                      />
+                      <ServiceStatusBadge
+                        isExpired={isExpired}
+                        isExpiringSoon={isExpiringSoon}
+                        minutesLeft={minutesLeft}
+                      />
+                    </div>
+
+                    {/* Service Details */}
+                    <div className="flex-1 mt-4 md:mt-0 md:ml-6">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <h2 className="text-lg font-bold text-gray-900">
+                            {service.title}
+                          </h2>
+                          <div className="flex items-center mt-1">
+                            <span className="text-sm font-medium text-gray-500">
+                              {service.category} •{" "}
+                              {new Date(service.createdAt).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="text-xl font-bold text-gray-900">
+                          ${service.price}
+                        </div>
+                      </div>
+
+                      <div className="mt-2">
+                        <p
+                          className={`text-sm text-gray-600 ${
+                            isExpanded ? "" : "line-clamp-2"
+                          }`}
+                        >
+                          {service.description}
+                        </p>
+                        {service.description.length > 100 && (
+                          <button
+                            onClick={() => toggleServiceExpand(service._id)}
+                            className="mt-1 text-sm font-medium text-blue-600 hover:text-blue-800"
+                          >
+                            {isExpanded ? "Show less" : "Read more"}
+                          </button>
+                        )}
+                      </div>
+
+                      {/* Additional Details (shown when expanded) */}
+                      {isExpanded && (
+                        <div className="mt-3 space-y-2">
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Phone className="w-4 h-4 mr-2 text-gray-500" />
+                            <span>{service.number}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <Mail className="w-4 h-4 mr-2 text-gray-500" />
+                            <span>{service.email}</span>
+                          </div>
+                          <div className="flex items-center text-sm text-gray-600">
+                            <MapPin className="w-4 h-4 mr-2 text-gray-500" />
+                            <span>{service.location}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div className="flex flex-wrap gap-2 mt-4">
+                        <button
+                          onClick={() => openUpdateModal(service)}
+                          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+                        >
+                          Update
+                        </button>
+                        <button
+                          onClick={() => handleDeleteService(service._id)}
+                          className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded-lg hover:bg-red-600"
+                          disabled={isDeleting}
+                        >
+                          {isDeleting ? "Deleting..." : "Delete"}
+                        </button>
+                        {(isExpiringSoon || isExpired) && (
+                          <button
+                            onClick={() => handleRenewService(service._id)}
+                            className="flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
+                            disabled={isRenewingService}
+                          >
+                            <RefreshCw className="w-4 h-4 mr-1" />
+                            {isRenewingService ? "Renewing..." : "Renew"}
+                          </button>
+                        )}
+                        <button
+                          onClick={() => toggleServiceExpand(service._id)}
+                          className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                        >
+                          {isExpanded ? "Less details" : "More details"}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center bg-white rounded-lg shadow">
+              <Info size={48} className="mb-4 text-gray-400" />
+              <h3 className="text-xl font-medium text-gray-700">
+                No services found
+              </h3>
+              <p className="mt-2 text-gray-500">
+                {searchTerm || filter !== "all"
+                  ? "Try adjusting your search or filter criteria"
+                  : "Create your first service to get started"}
+              </p>
+              <button
+                onClick={() => setIsServiceFormOpen(true)}
+                className="px-4 py-2 mt-4 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700"
+              >
+                Create Service
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Service Button */}
-      <div className="grid items-center justify-center w-full max-w-4xl gap-6 p-6 py-8 mt-8 bg-white rounded-md shadow-lg md:grid-cols-2">
-        <h1 className="text-3xl font-semibold text-center text-gray-800 md:text-left">
-          Create Your Own Service
-        </h1>
-        <button
-          onClick={() => setIsServiceFormOpen(true)}
-          className="w-auto h-16 mx-auto font-semibold text-white transition duration-300 ease-in-out bg-blue-400 rounded-lg md:w-auto hover:bg-blue-500 md:mx-0"
-        >
-          Click Here
-        </button>
-      </div>
-
-      {/* Service Form Modal */}
+      {/* Modals */}
       {isServiceFormOpen && (
         <ServiceForm onClose={() => setIsServiceFormOpen(false)} />
       )}
 
-      {/* Service List Section */}
-      <div className="w-full max-w-4xl p-6 mt-8 bg-white rounded-lg shadow-md">
-        <h1 className="text-3xl font-semibold text-center text-gray-800 md:text-left">
-          Your Services
-        </h1>
-        <div className="mt-6 space-y-6">
-          {services?.map((service) => (
-            <div
-              key={service._id}
-              className="relative flex items-center p-4 px-6 bg-gray-100 rounded-lg shadow-sm"
-            >
-              {/* Service Image */}
-              <img
-                src={service.images[0] || "https://via.placeholder.com/150"}
-                alt={service.title}
-                className="object-cover w-40 h-40 mr-4 rounded-lg"
-              />
+      {isUpdateModalOpen && serviceToUpdate && (
+        <UpdateServiceModal
+          service={serviceToUpdate}
+          onClose={closeUpdateModal}
+          onUpdate={handleServiceUpdate}
+        />
+      )}
 
-              {/* Service Details */}
-              <div className="flex-1">
-                <h2 className="text-lg font-bold">{authUser.fullName}</h2>
-
-                {/* Rating */}
-                <div className="flex items-center my-1 text-yellow-500">
-                  {Array(5)
-                    .fill()
-                    .map((_, i) => (
-                      <Star key={i} size={16} />
-                    ))}
-                  <span className="ml-2 text-gray-500">(07)</span>
-                </div>
-                <h2 className="text-lg font-bold">{service.title}</h2>
-                <p className="text-sm text-gray-600 line-clamp-2">
-                  {service.description}
-                </p>
-
-                {/* Price */}
-                <div className="absolute font-semibold text-gray-600 top-2 right-4">
-                  Price: <span className="text-black">${service.price}</span>
-                </div>
-
-                {/* Phone Number */}
-                <div className="flex items-center mt-2 font-semibold text-red-500">
-                  <Phone size={16} className="mr-2" /> {service.number}
-                </div>
-              </div>
-
-              {/* Update and Delete Buttons */}
-              <button
-                onClick={() => openUpdateModal(service)}
-                className="absolute px-4 py-2 mr-20 text-white bg-green-500 rounded-lg bottom-4 right-4 hover:bg-green-600"
-              >
-                Update
-              </button>
-              <button
-                onClick={() => handleDeleteService(service._id)}
-                className="absolute px-4 py-2 text-white bg-red-500 rounded-lg bottom-4 right-4 hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </div>
-          ))}
-        </div>
-        {isUpdateModalOpen && serviceToUpdate && (
-          <UpdateServiceModal
-            service={serviceToUpdate}
-            onClose={closeUpdateModal}
-            onUpdate={handleServiceUpdate}
-          />
-        )}
-      </div>
+      <div ref={servicesEndRef} />
     </div>
   );
 };
