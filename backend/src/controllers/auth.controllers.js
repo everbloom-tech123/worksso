@@ -92,7 +92,7 @@ export const logout = (req, res) => {
 
 export const updateProfile = async (req, res) => {
   try {
-    const { profilePic, name, location, phone, bio } = req.body;
+    const { profilePic, fullName, location, phone, bio } = req.body;
     const userId = req.user._id;
 
     let updatedFields = {};
@@ -106,7 +106,7 @@ export const updateProfile = async (req, res) => {
       updatedFields.profilePic = uploadResponse.secure_url;
     }
 
-    if (name) updatedFields.name = name;
+    if (fullName) updatedFields.fullName = fullName;
     if (location) updatedFields.location = location;
     if (phone) updatedFields.phone = phone;
     if (bio) updatedFields.bio = bio;

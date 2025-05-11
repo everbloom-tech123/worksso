@@ -72,7 +72,7 @@ const Navbar = () => {
         </li>
 
         <li>
-          <a href="#" className="hover:underline">
+          <a href="/contact" className="hover:underline">
             Contact us
           </a>
         </li>

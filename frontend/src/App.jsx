@@ -15,6 +15,7 @@ import CategoryPage from "./pages/CategoryPage.jsx";
 import ServicePage from "./pages/servicePage.jsx"; // Corrected import name
 import CategoryByIdPage from "./pages/CategoryByIdPage.jsx"; // Corrected import name
 import UpdateServiceModal from "./pages/UpdateServiceModalPage.jsx";
+import ContactPage from "./pages/contactPage.jsx";
 
 const App = () => {
   const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
@@ -89,6 +90,9 @@ const App = () => {
           path="/updateService/:serviceId"
           element={authUser ? <UpdateServiceModal /> : <Navigate to="/" />}
         />
+
+        {/* Contact Page */}
+        <Route path="/contact" element={<ContactPage />} />
       </Routes>
       <Footer />
       <Toaster />
